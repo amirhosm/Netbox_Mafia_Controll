@@ -1,0 +1,130 @@
+﻿using System.Collections.Generic;
+
+namespace RTLTMPro
+{
+    public class Translate
+    {
+        public static bool isEn;
+        public static Dictionary<string, string> allDict = new Dictionary<string, string>() {
+            {"پشتيباني", "Support"},
+            {"بازي ها", "Games"},
+            {"منچینگا", "Ludo"},
+            {"کشتینگا", "Sea Battle"},
+            {"کاردینگا", "Knife Hit"},
+            {"جایزه", "Prize"},
+            {"هم بازي ها","Friends"},
+            //{"جایزه : 100","100 : Prize"},
+            //{"جایزه : 50","50 : Prize"},
+            //{"جایزه : 0","0 : Prize"},
+            //{"انرژی لازم : 2","2 : Energy"},
+            //{"انرژی لازم : 1","1 : Energy"},
+            //{"انرژی لازم : 0","0 : Energy"},
+            {"پروفايل", "Profile"},
+            {"سطح شما در بازي ها", "Your Level"},
+             {"ويرايش", "Edit Profile"},
+             {"حساب ويژه فعال نيست", "Not Premium"},
+            {"تنظيمات", "Options"},
+            {"ثبت نام", "Register"},
+            {"ورود به حساب کاربري ديگر", "Login To Other Account"},
+             {"هم بازي هاي بلاک شده", "Blocked List"},
+              {"ثبت ايميل", "Register Email"},
+              {"پاک کردن حساب کاربری", "Delete My Account"},
+
+              {"گروه دوستان", "Groups"},
+              {"درخواست ها", "Requests"},
+              {"هنوز هم بازی ندارید", "No Friends"},
+              {"افزودن هم بازي", "Add Friend"},
+            {"ويرايش پروفايل", "Edit Profile"},
+            {"انتخاب تصوير پروفايل", "Select Avatar"},
+            {"برای ویرایش بیش از 6 بار نام یا تصویر کاربری نیاز به حساب ویژه دارید", "Upgrade to Premium account to edit more than 6 times"},
+            {"ثبت", "OK"},
+            {"بازي", "Games"},
+            {"هم بازي", "Friends"},
+            {"فروشگاه", "Shop"},
+            {"ورود به حساب", "Login"},
+            {"شماره موبايلت را وارد کن", "Enter Phone Number"},
+            {"ادامه", "OK"},
+            {"ورود", "OK"},
+            {"درخواست مجدد پيامک", "Resend Code"},
+            {"تغییر رمز ورود", "Change Password"},
+            {"قوانين و مقررات", "Policies"},
+            {"سوالات متداول", "FAQ"},
+            {"به بازينگا خوش آمديد", "Welcome"},
+            {"براي استفاده از تمامي امکانات بازينگا شماره موبايلت را وارد کن", "."},
+            {"در صورت پر نشدن خودکار کد تایید، پس از چند ثانیه دکمه بازگشت گوشی را یک بار بزنید و سپس کد را به صورت دستی پر کنید", "."},
+
+            {"ارسال پيام به پشتيباني بازينگا", "Send Support Message"},
+            {"ايميل", "Email"},
+            {"پيام شما", "Message"},
+
+            {"يک نام کاربري انتخاب کنيد", "Select Username"},
+            {"انتخاب نام کاربري", "Username"},
+            {"نام کاربري", "Username"},
+            {"با وارد کردن کد معرف، خودتان و معرفتان سکه دریافت کنید", "Invite Code"},
+            {"کد معرف (اختياري)", "Optional Code"},
+            {"تاييد", "OK"},
+
+            {"رمز عبور", "Password"},
+            {"تغيير رمز عبور", "Change Password"},
+            {"رمز عبور جديدتان را وارد کنيد", "Enter New Password"},
+            {"ايميل خود را وارد کنيد", "Enter Email"},
+            {"تغيير ايميل", "Change Email"},
+            {"کد ارسال شده به ايميل تان را وارد کنيد", "Enter Emailed Code"},
+            {"کد را وارد کنيد", "Enter Code"},
+            {"ورود با نام کاربري و رمز عبور", "Login With Username And Password"},
+            {"لطفا نام کاربري و رمز عبورتان را وارد کنيد", "Please Enter Username And Password"},
+            {"رمز عبورتان را فراموش کرديد؟", "Forgot Password?"},
+            {"فراموشي رمز عبور", "Reset Password"},
+            {"ارسال ايميل", "Send Email"},
+            {"هم بازي هاي  بلاک شده", "Blocked Friends"},
+            {"هم بازی بلاک شده ندارید", "No Blocked Friends"},
+
+           {"افزودن همبازي", "Add Friend"},
+           {"جستجو به وسيله نام کاربري", "Search By Username"},
+           {"جستجو به وسيله شماره موبايل", "Search By Phone Number"},
+           {"هیچ درخواستی وجود ندارد", "No Requests"},
+
+           {"گفت و گوی عمومی (مخصوص اعضای ویژه)", "VIP Group"},
+           {"ايجاد گروه", "Create Group"},
+
+           {"نام گروه را وارد کنيد", "Enter Group Name"},
+           {"انتخاب آيکون", "Select Icon"},
+           {"دعوت به گروه", "Add Member"},
+           {"نام گروه", "Group Name"},
+           {"گفت و گو", "Chat"},
+           {"درخواست بازي وجود ندارد", "No Game Request"},
+           {"اضافه کردن هم بازي", "Add Member"},
+           {"حذف هم بازي", "Remove Member"},
+           {"حذف گروه", "Delete Group"},
+           {"ترک گروه", "Leave Group"},
+           {"ويرايش گروه", "Edit Group"},
+           {"نام فعلي گروه را تغيير دهيد", "Change Name"},
+           {"اضافه کردن هم بازی", "Add Member"},
+           {"حذف هم بازی", "Remove Member"},
+
+           {"پیامت رو اینجا بنویس...", "Enter Message"},
+           {"در حال بارگذاري", "Loading"},
+           {"انصراف از بازي", "Resign Game"},
+           {"بازگشت به بازي", "Return to Game"},
+           {"انصراف از ادامه بازي", "Confirm Resign Game"},
+           {"تنظيمات بازي", "Game Setting"},
+           {"تعداد بازيکن", "Player Count"},
+           {"ارسال درخواست", "Send Game Request"},
+           {"بلاک کردن", "Block"},
+           {"گزارش پیام نامناسب", "Report Message"},
+           {"نیاز است که بازینگا مجددا شروع شود", "Application Must Restart"},
+           {"باشه", "OK"},
+           {"ارسال پيام", "Send Message"}
+    };
+
+
+        public static Dictionary<string, string> DynamicList = new Dictionary<string, string>() {
+            {"سطح شما", "Your Level"},
+            {"بازی های انجام شده", "Finished Games"},
+            {"بازی های مورد نیاز تا سطح بعدی", "Remaining Games"},
+            {"جایزه :"," Prize"},
+            {"انرژی لازم :"," Energy"},
+            {"دعوت به بازینگا   (کد معرفی : ("," Invite Code "}
+            };
+    }
+}
