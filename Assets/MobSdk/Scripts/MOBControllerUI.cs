@@ -107,34 +107,34 @@ public class MOBControllerUI : MonoBehaviour
             btnEnableGyro.onClick.AddListener(RequestGyroPermission);
     }
 
-    private void Update()
-    {
-        if (connectionManager.isConnected)
-        {
-            SendInputState();
+//    private void Update()
+//    {
+//        if (connectionManager.isConnected)
+//        {
+//            SendInputState();
             
-            // Only update mouse if in the appropriate mode
-            if (currentMode == ControlMode.Gyro)
-            {
-#if UNITY_WEBGL && !UNITY_EDITOR
-                UpdateWebGLGyroMouse();
-#else
-                if (Application.platform != RuntimePlatform.WebGLPlayer)
-                {
-                    UpdateAirMouse();
-                }
-                else
-                {
-                    UpdateWebGLGyroMouse();
-                }
-#endif
-            }
-            else if (currentMode == ControlMode.Touch)
-            {
-                UpdateTouchMouse();
-            }
-        }
-    }
+//            // Only update mouse if in the appropriate mode
+//            if (currentMode == ControlMode.Gyro)
+//            {
+//#if UNITY_WEBGL && !UNITY_EDITOR
+//                UpdateWebGLGyroMouse();
+//#else
+//                if (Application.platform != RuntimePlatform.WebGLPlayer)
+//                {
+//                    UpdateAirMouse();
+//                }
+//                else
+//                {
+//                    UpdateWebGLGyroMouse();
+//                }
+//#endif
+//            }
+//            else if (currentMode == ControlMode.Touch)
+//            {
+//                UpdateTouchMouse();
+//            }
+//        }
+//    }
 
     // NEW: Toggle between Gyro and Touch modes
     public void ToggleControlMode()

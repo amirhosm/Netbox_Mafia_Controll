@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class GameManager : MonoBehaviour
 {
@@ -29,11 +30,11 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        nameInput.text = "PL_" + Random.Range(1, 100);
+        nameInput.text = "!press button!";
     }
     public void OnLobbyReadyBtn()
     {
-        
+        nameInput.text = GetComponent<MOBGameSDK>().GetMyPlayerId();
         if (!string.IsNullOrEmpty(nameInput.text))
         {
             GetComponent<MOBGameSDK>().SendStringToTV("ready|" + nameInput.text + "|a");
