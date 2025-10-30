@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/Mafia Controller.unity
-    guid: d7da19cf6c77d74479a864dcc5641d93
+    path: Assets/Scenes/Mafia.unity
+    guid: 95c62c1dd5d2d1f4b91049a50373e60b
   m_configObjects: {}

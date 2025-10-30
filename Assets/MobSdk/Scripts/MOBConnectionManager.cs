@@ -1,34 +1,66 @@
-using System;
+﻿using System;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using UnityEngine;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+
+#if !UNITY_WEBGL || UNITY_EDITOR
+using WebSocketSharp;
+#endif
 
 public class MOBConnectionManager : MonoBehaviour
 {
     public static MOBConnectionManager Instance { get; private set; }
 
-    [Header("Connection Info")]
-    public string tvIP = "";
-    public int tvPort = 7777;
-    public string myPlayerId = "";
-    public bool isConnected = false;
+    [Header("Connection Settings")]
+    public string serverIP = "192.168.1.100";
+    public int tcpPort = 7777; // For mobile native builds
+    public int wsPort = 7778; // For WebGL
+    public string wsPath = "/mobile";
 
-    private TcpClient client;
-    private NetworkStream stream;
+    private TcpClient tcpClient;
+    private NetworkStream tcpStream;
+
+#if !UNITY_WEBGL || UNITY_EDITOR
+    private WebSocket wsClient;
+#else
+    private int webSocketId = -1;
+    private Queue<byte[]> messageQueue = new Queue<byte[]>();
+#endif
+
     private Thread receiveThread;
-    private Thread heartbeatThread;
+    public bool isConnected = false;
+    public string myPlayerId = "";
     private bool isRunning = false;
+    private bool isWebGL = false;
 
-    // Events
     public event Action OnTVConnected;
     public event Action OnTVFucked;
     public event Action<string> OnTVGotString;
-    public event Action<byte[]> OnTVGotNude;
-    public event Action<string, string> GotNudeFrom; // playerId, imageData
+    public event Action<string, byte[]> OnTVGotNude;
+    public event Action<string, string> GotNudeFrom;
 
-    private Queue<Action> mainThreadActions = new Queue<Action>();
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [DllImport("__Internal")]
+    private static extern int WebSocketConnect(string url);
+    
+    [DllImport("__Internal")]
+    private static extern int WebSocketGetState(int socketId);
+    
+    [DllImport("__Internal")]
+    private static extern void WebSocketSend(int socketId, byte[] data, int length);
+    
+    [DllImport("__Internal")]
+    private static extern void WebSocketSendText(int socketId, string message);
+    
+    [DllImport("__Internal")]
+    private static extern void WebSocketClose(int socketId);
+    
+    [DllImport("__Internal")]
+    private static extern int WebSocketReceive(int socketId, byte[] buffer, int bufferSize);
+#endif
 
     private void Awake()
     {
@@ -40,222 +72,321 @@ public class MOBConnectionManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
         }
-    }
 
-    private void Update()
-    {
-        // Execute actions on main thread
-        lock (mainThreadActions)
-        {
-            while (mainThreadActions.Count > 0)
-            {
-                mainThreadActions.Dequeue()?.Invoke();
-            }
-        }
+#if UNITY_WEBGL && !UNITY_EDITOR
+        isWebGL = true;
+        Debug.Log("Running in WebGL mode");
+#else
+        isWebGL = Application.platform == RuntimePlatform.WebGLPlayer;
+        Debug.Log($"Running in {Application.platform} mode");
+#endif
     }
 
     public void ConnectToTV(string ip, int port)
     {
-        if (isConnected)
+        serverIP = ip;
+
+        Debug.Log($"ConnectToTV called with IP: {ip}, Port: {port}, IsWebGL: {isWebGL}");
+
+        if (isWebGL)
         {
-            Debug.LogWarning("Already connected to TV");
-            return;
+            wsPort = port;
+            ConnectWebSocket();
         }
-
-        tvIP = ip;
-        tvPort = port;
-
-        Thread connectThread = new Thread(new ThreadStart(ConnectToTVThread));
-        connectThread.IsBackground = true;
-        connectThread.Start();
+        else
+        {
+            tcpPort = port;
+            ConnectTcp();
+        }
     }
 
-    private void ConnectToTVThread()
+    public void ConnectToTV()
+    {
+        ConnectToTV(serverIP, isWebGL ? wsPort : tcpPort);
+    }
+
+    private void ConnectTcp()
     {
         try
         {
-            client = new TcpClient();
-            client.Connect(tvIP, tvPort);
-            stream = client.GetStream();
+            Debug.Log($"Attempting TCP connection to {serverIP}:{tcpPort}");
+            tcpClient = new TcpClient();
+            tcpClient.Connect(serverIP, tcpPort);
+            tcpStream = tcpClient.GetStream();
             isConnected = true;
             isRunning = true;
 
-            Debug.Log($"✓ Connected to TV at {tvIP}:{tvPort}");
-
-            // Start receive thread
-            receiveThread = new Thread(new ThreadStart(ReceiveData));
+            receiveThread = new Thread(ReceiveTcpMessages);
             receiveThread.IsBackground = true;
             receiveThread.Start();
 
-            // Trigger connection event on main thread
-            EnqueueMainThreadAction(() =>
+            Debug.Log($"✓ TCP Connected to TV at {serverIP}:{tcpPort}");
+
+            if (UnityMainThreadDispatcher.Instance != null)
             {
-                OnTVConnected?.Invoke();
-            });
+                UnityMainThreadDispatcher.Instance.Enqueue(() => OnTVConnected?.Invoke());
+            }
         }
         catch (Exception e)
         {
-            Debug.LogError($"✗ Failed to connect to TV: {e.Message}");
+            Debug.LogError($"✗ TCP Connect failed: {e.Message}\n{e.StackTrace}");
             isConnected = false;
 
-            EnqueueMainThreadAction(() =>
+            if (UnityMainThreadDispatcher.Instance != null)
             {
-                OnTVFucked?.Invoke();
-            });
+                UnityMainThreadDispatcher.Instance.Enqueue(() => OnTVFucked?.Invoke());
+            }
         }
     }
 
-    private void ReceiveData()
+    private void ConnectWebSocket()
     {
-        byte[] buffer = new byte[1024 * 1024]; // 1MB buffer
-
-        while (isRunning && client != null && client.Connected)
+#if UNITY_WEBGL && !UNITY_EDITOR
+        try
         {
-            try
+            string url = $"ws://{serverIP}:{wsPort}{wsPath}";
+            Debug.Log($"Attempting WebGL WebSocket connection to: {url}");
+            
+            webSocketId = WebSocketConnect(url);
+            
+            if (webSocketId >= 0)
             {
-                int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                isRunning = true;
+                Debug.Log($"✓ WebSocket connection initiated with ID: {webSocketId}");
+            }
+            else
+            {
+                Debug.LogError($"✗ WebSocket Connect failed: Invalid socket ID");
+                isConnected = false;
+                OnTVFucked?.Invoke();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"✗ WebSocket Connect failed: {e.Message}\n{e.StackTrace}");
+            isConnected = false;
+            OnTVFucked?.Invoke();
+        }
+#else
+        try
+        {
+            string url = $"ws://{serverIP}:{wsPort}{wsPath}";
+            Debug.Log($"Attempting Editor WebSocket connection to: {url}");
+
+            wsClient = new WebSocket(url);
+
+            wsClient.OnOpen += (sender, e) =>
+            {
+                isConnected = true;
+                isRunning = true;
+                Debug.Log($"✓ WebSocket Connected to TV at {url}");
+
+                if (UnityMainThreadDispatcher.Instance != null)
+                {
+                    UnityMainThreadDispatcher.Instance.Enqueue(() => OnTVConnected?.Invoke());
+                }
+            };
+
+            wsClient.OnMessage += (sender, e) =>
+            {
+                string message = e.IsText ? e.Data : Encoding.UTF8.GetString(e.RawData);
+                Debug.Log($"WebSocket message received: {message.Substring(0, Math.Min(100, message.Length))}...");
+
+                if (UnityMainThreadDispatcher.Instance != null)
+                {
+                    UnityMainThreadDispatcher.Instance.Enqueue(() => ProcessMessage(message));
+                }
+            };
+
+            wsClient.OnError += (sender, e) =>
+            {
+                Debug.LogError($"✗ WebSocket error: {e.Message}");
+
+                if (UnityMainThreadDispatcher.Instance != null)
+                {
+                    UnityMainThreadDispatcher.Instance.Enqueue(() => Disconnect());
+                }
+            };
+
+            wsClient.OnClose += (sender, e) =>
+            {
+                Debug.Log($"WebSocket closed: Code={e.Code}, Reason={e.Reason}");
+
+                if (UnityMainThreadDispatcher.Instance != null)
+                {
+                    UnityMainThreadDispatcher.Instance.Enqueue(() => Disconnect());
+                }
+            };
+
+            wsClient.ConnectAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"✗ WebSocket Connect failed: {e.Message}\n{e.StackTrace}");
+            isConnected = false;
+            OnTVFucked?.Invoke();
+        }
+#endif
+    }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    private void Update()
+    {
+        if (isWebGL && isRunning && webSocketId >= 0)
+        {
+            int state = WebSocketGetState(webSocketId);
+            
+            // State: 0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED
+            if (state == 1 && !isConnected)
+            {
+                isConnected = true;
+                Debug.Log("✓ WebGL WebSocket opened");
+                OnTVConnected?.Invoke();
+            }
+            else if (state == 3 && isConnected)
+            {
+                Debug.LogWarning("WebSocket closed by server");
+                Disconnect();
+            }
+            
+            // Receive messages
+            if (isConnected)
+            {
+                byte[] buffer = new byte[1024 * 1024];
+                int bytesRead = WebSocketReceive(webSocketId, buffer, buffer.Length);
+                
                 if (bytesRead > 0)
                 {
-                    ProcessMessage(buffer, bytesRead);
+                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    Debug.Log($"WebGL received: {message.Substring(0, Math.Min(100, message.Length))}...");
+                    ProcessMessage(message);
                 }
-            }
-            catch (Exception e)
-            {
-                if (isRunning)
-                {
-                    Debug.LogError($"Error receiving data: {e.Message}");
-                    Disconnect();
-                }
-                break;
             }
         }
     }
+#endif
 
-    private void ProcessMessage(byte[] data, int length)
+    private void ReceiveTcpMessages()
     {
         try
         {
-            string message = Encoding.UTF8.GetString(data, 0, length);
+            byte[] buffer = new byte[1024 * 1024];
+            while (isRunning && tcpClient != null && tcpClient.Connected)
+            {
+                int bytesRead = tcpStream.Read(buffer, 0, buffer.Length);
+                if (bytesRead > 0)
+                {
+                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+
+                    if (UnityMainThreadDispatcher.Instance != null)
+                    {
+                        UnityMainThreadDispatcher.Instance.Enqueue(() => ProcessMessage(message));
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"TCP Receive error: {e.Message}");
+
+            if (UnityMainThreadDispatcher.Instance != null)
+            {
+                UnityMainThreadDispatcher.Instance.Enqueue(() => Disconnect());
+            }
+        }
+    }
+
+    private void ProcessMessage(string message)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(message)) return;
+
+            Debug.Log($"Processing: {message.Substring(0, Math.Min(50, message.Length))}...");
 
             if (message.StartsWith("PLAYERID:"))
             {
-                myPlayerId = message.Substring(9);
-                Debug.Log($"Assigned Player ID: {myPlayerId}");
+                myPlayerId = message.Substring(9).Trim();
+                Debug.Log($"✓ Assigned Player ID: {myPlayerId}");
             }
             else if (message.StartsWith("STRING:"))
             {
                 string content = message.Substring(7);
-                EnqueueMainThreadAction(() =>
-                {
-                    OnTVGotString?.Invoke(content);
-                });
-            }
-            else if (message.StartsWith("FROMNUDE:"))
-            {
-                string content = message.Substring(9);
-                EnqueueMainThreadAction(() =>
-                {
-                    OnTVGotString?.Invoke(content);
-                });
+                OnTVGotString?.Invoke(content);
             }
             else if (message.StartsWith("IMAGE:"))
             {
                 int headerEnd = message.IndexOf('\n');
-                int imageSize = int.Parse(message.Substring(6, headerEnd - 6));
-                byte[] imageData = new byte[imageSize];
-                Array.Copy(data, headerEnd + 1, imageData, 0, imageSize);
-
-                EnqueueMainThreadAction(() =>
+                if (headerEnd > 0)
                 {
-                    OnTVGotNude?.Invoke(imageData);
-                });
+                    int imageSize = int.Parse(message.Substring(6, headerEnd - 6));
+                    byte[] imageData = Encoding.UTF8.GetBytes(message.Substring(headerEnd + 1));
+                    if (imageData.Length >= imageSize)
+                    {
+                        byte[] trimmedData = new byte[imageSize];
+                        Array.Copy(imageData, 0, trimmedData, 0, imageSize);
+                        OnTVGotNude?.Invoke(myPlayerId, trimmedData);
+                    }
+                }
+            }
+            else if (message.StartsWith("FROMNUDE:"))
+            {
+                int firstColon = message.IndexOf(':', 9);
+                string senderId = message.Substring(9, firstColon - 9);
+                string content = message.Substring(firstColon + 1);
+                GotNudeFrom?.Invoke(senderId, content);
             }
             else if (message.StartsWith("PLAYERNUDE:"))
             {
-                // Format: PLAYERNUDE:player-X:imageSize\n[imageData]
                 int firstColon = message.IndexOf(':', 11);
-                int secondColon = message.IndexOf(':', firstColon + 1);
                 int headerEnd = message.IndexOf('\n');
-
                 string senderId = message.Substring(11, firstColon - 11);
                 int imageSize = int.Parse(message.Substring(firstColon + 1, headerEnd - firstColon - 1));
-
-                byte[] imageData = new byte[imageSize];
-                Array.Copy(data, headerEnd + 1, imageData, 0, imageSize);
-
-                EnqueueMainThreadAction(() =>
+                byte[] imageData = Encoding.UTF8.GetBytes(message.Substring(headerEnd + 1));
+                if (imageData.Length >= imageSize)
                 {
-                    GotNudeFrom?.Invoke(senderId, Convert.ToBase64String(imageData));
-                });
+                    byte[] trimmedData = new byte[imageSize];
+                    Array.Copy(imageData, 0, trimmedData, 0, imageSize);
+                    OnTVGotNude?.Invoke(senderId, trimmedData);
+                }
             }
         }
         catch (Exception e)
         {
-            Debug.LogError($"Error processing message: {e.Message}");
+            Debug.LogError($"Error processing message: {e.Message}\n{e.StackTrace}");
         }
     }
 
-    // Public API Functions
-
-    // Send string to TV
-    public void SendStringToTV(string message)
+    public void SendInput(string inputState)
     {
-        SendData($"STRING:{message}");
+        SendToTV($"INPUT:{inputState}");
     }
 
-    // Send image to TV
+    public void SendGyroData(Vector3 gyro, Vector3 accel)
+    {
+        string gyroData = $"{gyro.x:F2},{gyro.y:F2},{gyro.z:F2},{accel.x:F2},{accel.y:F2},{accel.z:F2}";
+        SendToTV($"GYRO:{gyroData}");
+    }
+
+    public void SendMousePosition(Vector2 position)
+    {
+        SendToTV($"MOUSE:{position.x:F2},{position.y:F2}");
+    }
+
+    public void SendStringToTV(string message)
+    {
+        SendToTV($"STRING:{message}");
+    }
+
     public void SendImageToTV(byte[] imageData)
     {
         byte[] header = Encoding.UTF8.GetBytes($"IMAGE:{imageData.Length}\n");
         byte[] fullMessage = new byte[header.Length + imageData.Length];
         Array.Copy(header, 0, fullMessage, 0, header.Length);
         Array.Copy(imageData, 0, fullMessage, header.Length, imageData.Length);
-
-        SendData(fullMessage);
-    }
-
-    // Send texture to TV
-    public void SendTextureToTV(Texture2D texture)
-    {
-        byte[] imageData = texture.EncodeToPNG();
-        SendImageToTV(imageData);
-    }
-
-    // Send button input to TV
-    public void SendInput(string buttonData)
-    {
-        SendData($"INPUT:{buttonData}");
-    }
-
-    // Send gyro/accelerometer data to TV
-    public void SendGyroData(Vector3 gyro, Vector3 accel)
-    {
-        string gyroData = $"G:{gyro.x:F2},{gyro.y:F2},{gyro.z:F2}|A:{accel.x:F2},{accel.y:F2},{accel.z:F2}";
-        SendData($"GYRO:{gyroData}");
-    }
-
-    // Send air mouse position
-    public void SendMousePosition(Vector2 position)
-    {
-        SendData($"MOUSE:{position.x:F0},{position.y:F0}");
-    }
-
-    // Get list of all connected devices from TV (request)
-    public void GetAllThoseBitches()
-    {
-        SendData("GETDEVICES");
-    }
-
-    // Send string/image to another mobile device by player ID
-    public void SendMyNudeTo(string targetPlayerId, string message)
-    {
-        SendData($"TONUDE:{targetPlayerId}:{message}");
-    }
-
-    public void SendMyMessageTo(string targetPlayerId, string message)
-    {
-        SendData($"FORWARD:{targetPlayerId}:{message}");
+        SendToTV(fullMessage);
     }
 
     public void SendImageToPlayer(string targetPlayerId, byte[] imageData)
@@ -264,85 +395,130 @@ public class MOBConnectionManager : MonoBehaviour
         byte[] fullMessage = new byte[header.Length + imageData.Length];
         Array.Copy(header, 0, fullMessage, 0, header.Length);
         Array.Copy(imageData, 0, fullMessage, header.Length, imageData.Length);
-
-        SendData(fullMessage);
+        SendToTV(fullMessage);
     }
 
-    private void SendData(string message)
+    public void SendTextureToTV(Texture2D texture)
     {
-        byte[] data = Encoding.UTF8.GetBytes(message);
-        SendData(data);
-    }
-
-    private void SendData(byte[] data)
-    {
-        if (!isConnected || stream == null)
+        if (texture == null)
         {
-            Debug.LogWarning("Not connected to TV");
+            Debug.LogError("Texture is null");
+            return;
+        }
+        byte[] imageData = texture.EncodeToPNG();
+        SendImageToTV(imageData);
+    }
+
+    public string[] GetAllThoseBitches()
+    {
+        SendToTV("GETDEVICES");
+        return new string[0];
+    }
+
+    public void SendMyNudeTo(string targetPlayerId, string message)
+    {
+        SendToTV($"TONUDE:{targetPlayerId}:{message}");
+    }
+
+    public void SendMyMessageTo(string targetPlayerId, string message)
+    {
+        SendToTV($"FORWARD:{targetPlayerId}:{message}");
+    }
+
+    private void SendToTV(string message)
+    {
+        SendToTV(Encoding.UTF8.GetBytes(message));
+    }
+
+    private void SendToTV(byte[] data)
+    {
+        if (!isConnected)
+        {
+            Debug.LogWarning("Cannot send - not connected");
             return;
         }
 
         try
         {
-            stream.Write(data, 0, data.Length);
-            stream.Flush();
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (webSocketId >= 0)
+            {
+                WebSocketSend(webSocketId, data, data.Length);
+                Debug.Log($"WebGL sent: {Encoding.UTF8.GetString(data).Substring(0, Math.Min(50, data.Length))}...");
+            }
+#else
+            if (isWebGL)
+            {
+                if (wsClient != null && wsClient.IsAlive)
+                {
+                    wsClient.Send(data);
+                    Debug.Log($"WebSocket sent: {Encoding.UTF8.GetString(data).Substring(0, Math.Min(50, data.Length))}...");
+                }
+            }
+            else
+            {
+                if (tcpStream != null)
+                {
+                    tcpStream.Write(data, 0, data.Length);
+                    tcpStream.Flush();
+                    Debug.Log($"TCP sent: {Encoding.UTF8.GetString(data).Substring(0, Math.Min(50, data.Length))}...");
+                }
+            }
+#endif
         }
         catch (Exception e)
         {
-            Debug.LogError($"Error sending data: {e.Message}");
+            Debug.LogError($"Send error: {e.Message}");
             Disconnect();
         }
     }
 
-    public void Disconnect()
+    private void Disconnect()
     {
-        isRunning = false;
+        if (!isConnected && !isRunning) return;
+
         isConnected = false;
+        isRunning = false;
 
-        if (stream != null)
+        Debug.Log("Disconnecting...");
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        if (webSocketId >= 0)
         {
-            stream.Close();
-            stream = null;
+            WebSocketClose(webSocketId);
+            webSocketId = -1;
         }
-
-        if (client != null)
+#else
+        if (isWebGL)
         {
-            client.Close();
-            client = null;
+            if (wsClient != null)
+            {
+                wsClient.Close();
+                wsClient = null;
+            }
         }
-
-        if (receiveThread != null && receiveThread.IsAlive)
+        else
         {
-            receiveThread.Abort();
+            if (tcpStream != null)
+            {
+                tcpStream.Close();
+                tcpStream = null;
+            }
+            if (tcpClient != null)
+            {
+                tcpClient.Close();
+                tcpClient = null;
+            }
         }
+#endif
 
-        EnqueueMainThreadAction(() =>
-        {
-            OnTVFucked?.Invoke();
-        });
-
-        Debug.Log("Disconnected from TV");
-    }
-
-    private void EnqueueMainThreadAction(Action action)
-    {
-        lock (mainThreadActions)
-        {
-            mainThreadActions.Enqueue(action);
-        }
+        OnTVFucked?.Invoke();
+        Debug.Log("✗ Disconnected from TV");
     }
 
     private void OnApplicationQuit()
     {
+        isRunning = false;
         Disconnect();
-    }
-
-    private void OnApplicationPause(bool pause)
-    {
-        if (pause)
-        {
-            // App going to background
-            Debug.Log("App paused");
-        }
     }
 }

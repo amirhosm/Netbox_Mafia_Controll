@@ -19,7 +19,7 @@ public class MOBGameSDK : MonoBehaviour
         connectionManager.OnTVConnected += OnTVConnected;
         connectionManager.OnTVFucked += OnTVFucked;
         connectionManager.OnTVGotString += OnTVGotString;
-        connectionManager.OnTVGotNude += OnTVGotNude;
+        //connectionManager.OnTVGotNude += OnTVGotNude;
         connectionManager.GotNudeFrom += GotNudeFrom;
     }
 
@@ -179,7 +179,7 @@ public class MOBGameSDK : MonoBehaviour
             connectionManager.OnTVConnected -= OnTVConnected;
             connectionManager.OnTVFucked -= OnTVFucked;
             connectionManager.OnTVGotString -= OnTVGotString;
-            connectionManager.OnTVGotNude -= OnTVGotNude;
+            //connectionManager.OnTVGotNude -= OnTVGotNude;
             connectionManager.GotNudeFrom -= GotNudeFrom;
         }
     }

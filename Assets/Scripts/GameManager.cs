@@ -27,8 +27,13 @@ public class GameManager : MonoBehaviour
     string underVoteID;
     string roleName, roleAct, roleTeam;
 
+    private void Start()
+    {
+        nameInput.text = "PL_" + Random.Range(1, 100);
+    }
     public void OnLobbyReadyBtn()
     {
+        
         if (!string.IsNullOrEmpty(nameInput.text))
         {
             GetComponent<MOBGameSDK>().SendStringToTV("ready|" + nameInput.text + "|a");
