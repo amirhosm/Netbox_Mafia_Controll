@@ -172,12 +172,16 @@ public class MOBDataSender : MonoBehaviour
                 return;
             }
 
+            FindFirstObjectByType<GameManager>().SetImage(imageBytes);
+
             // Send to TV
             SetStatus("Sending image to TV...", normalColor);
             connectionManager.SendImageToTV(imageBytes);
 
             Debug.Log($"[MOBDataSender] ✓ Image sent successfully! ({imageBytes.Length} bytes)");
             SetStatus($"Image sent! ({FormatFileSize(imageBytes.Length)})", successColor);
+
+            
         }
         catch (Exception e)
         {

@@ -3,12 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
     [SerializeField] TMP_InputField nameInput;
     [SerializeField] GameObject messagePanel;
+    [SerializeField] GameObject keyboard;
+    [SerializeField] TMP_InputField keyboardInput;
+    public RawImage avatarImg;
     [SerializeField] RTLTextMeshPro messageTxt;
     [Header("PANELs")]
     [SerializeField] GameObject lobbyPanel;
@@ -30,11 +33,42 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        nameInput.text = "!press button!";
+        nameInput.onSelect.AddListener((t) =>
+        {
+            keyboard.SetActive(true);
+        });
+    }
+
+    public void SetImage(byte[] imageBytes)
+    {
+        // Convert byte array to Texture2D
+        try
+        {
+            Texture2D texture = new Texture2D(2, 2);
+            bool loaded = texture.LoadImage(imageBytes); // Auto-resizes texture
+
+            if (loaded)
+            {
+                avatarImg.texture = texture;
+                Debug.Log($"[TVDebugDataDisplay] Image loaded: {texture.width}x{texture.height}");
+            }
+            else
+            {
+                Debug.LogError("[TVDebugDataDisplay] Failed to load image data!");
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[TVDebugDataDisplay] Error loading image: {e.Message}");
+        }
+    }
+
+    public void OnBtn_KetboardOk()
+    {
+        keyboard.SetActive(false);
     }
     public void OnLobbyReadyBtn()
     {
-        nameInput.text = GetComponent<MOBGameSDK>().GetMyPlayerId();
         if (!string.IsNullOrEmpty(nameInput.text))
         {
             GetComponent<MOBGameSDK>().SendStringToTV("ready|" + nameInput.text + "|a");
