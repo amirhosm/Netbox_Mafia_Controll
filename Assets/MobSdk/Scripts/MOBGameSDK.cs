@@ -63,6 +63,10 @@ public class MOBGameSDK : MonoBehaviour
         {
             gameManager.ShowDie();
         }
+        else if (message.StartsWith("Win"))
+        {
+            gameManager.ShowWin();
+        }
         else if (message.StartsWith("NightPlayers"))
         {
             string[] Datas = message.Split("|");
