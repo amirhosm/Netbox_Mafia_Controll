@@ -73,6 +73,8 @@ public class MOBControllerUI : MonoBehaviour
 
     private void Start()
     {
+        Screen.SetResolution(720, 1280, false);
+
         connectionManager = MOBConnectionManager.Instance;
 
         connectionManager.OnTVConnected += OnConnected;
