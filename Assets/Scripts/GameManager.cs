@@ -20,7 +20,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject dayTalkPanel;
     [SerializeField] GameObject dayVotePanel;
     [SerializeField] GameObject diePanel;
-    [SerializeField] GameObject winPanel;
+    [SerializeField] GameObject winMafiaPanel;
+    [SerializeField] GameObject winCitizenPanel;
     [SerializeField] NightPanel nightPanel;
     [Header("Show Role")]
     [SerializeField] RTLTextMeshPro showRoleTxt;
@@ -164,9 +165,14 @@ public class GameManager : MonoBehaviour
         diePanel.SetActive(true);
     }
 
-    public void ShowWin()
+    public void ShowWinMafia()
     {
-        winPanel.SetActive(true);
+        winMafiaPanel.SetActive(true);
+    }
+
+    public void ShowWinCitizen()
+    {
+        winCitizenPanel.SetActive(true);
     }
     public void ResetAll()
     {

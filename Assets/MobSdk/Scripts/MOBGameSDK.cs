@@ -63,9 +63,13 @@ public class MOBGameSDK : MonoBehaviour
         {
             gameManager.ShowDie();
         }
-        else if (message.StartsWith("Win"))
+        else if (message.StartsWith("Win_mafia"))
         {
-            gameManager.ShowWin();
+            gameManager.ShowWinMafia();
+        }
+        else if (message.StartsWith("Win_citizen"))
+        {
+            gameManager.ShowWinCitizen();
         }
         else if (message.StartsWith("NightPlayers"))
         {
