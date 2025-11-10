@@ -71,6 +71,10 @@ public class MOBGameSDK : MonoBehaviour
         {
             gameManager.ShowWinCitizen();
         }
+        else if (message.StartsWith("Kicked"))
+        {
+            gameManager.ShowKicked();
+        }
         else if (message.StartsWith("NightPlayers"))
         {
             string[] Datas = message.Split("|");
