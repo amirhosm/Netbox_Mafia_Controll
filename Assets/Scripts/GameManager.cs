@@ -23,6 +23,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject winMafiaPanel;
     [SerializeField] GameObject winCitizenPanel;
     [SerializeField] NightPanel nightPanel;
+    [SerializeField] GameObject transitionPanel;
     [Header("Show Role")]
     [SerializeField] RTLTextMeshPro showRoleTxt;
     [Header("Day Talk")]
@@ -30,8 +31,14 @@ public class GameManager : MonoBehaviour
     [Header("Day Vote")]
     [SerializeField] RTLTextMeshPro dayVotePlayerName;
     [SerializeField] GameObject dayVoteBtn;
+    
     string underVoteID;
     string roleName, roleAct, roleTeam;
+    private Animator transitionAnimator;
+    private bool isTransitioning = false;
+    
+    // Queue system for handling multiple rapid transitions
+    private Queue<System.Action> transitionQueue = new Queue<System.Action>();
 
     private void Start()
     {
@@ -39,6 +46,82 @@ public class GameManager : MonoBehaviour
         {
             keyboard.SetActive(true);
         });
+        
+        // Get the Animator component from the transition panel
+        if (transitionPanel != null)
+        {
+            transitionAnimator = transitionPanel.GetComponent<Animator>();
+            if (transitionAnimator == null)
+            {
+                Debug.LogError("Transition panel does not have an Animator component!");
+            }
+        }
+        else
+        {
+            Debug.LogError("Transition panel is not assigned!");
+        }
+    }
+
+    // Main transition method that handles the smooth panel transitions
+    private void TransitionToPanel(System.Action panelSwitchAction)
+    {
+        if (isTransitioning)
+        {
+            // If already transitioning, queue the action
+            transitionQueue.Enqueue(panelSwitchAction);
+            return;
+        }
+        
+        StartCoroutine(PerformTransition(panelSwitchAction));
+    }
+    
+    private IEnumerator PerformTransition(System.Action panelSwitchAction)
+    {
+        isTransitioning = true;
+        
+        // Show transition panel and play close animation
+        transitionPanel.SetActive(true);
+        transitionAnimator.Play("Transition_Close");
+        
+        // Wait for close animation to complete
+        yield return new WaitForSeconds(GetAnimationLength("Transition_Close"));
+        
+        // Execute the panel switch action
+        panelSwitchAction?.Invoke();
+        
+        // Play open animation
+        transitionAnimator.Play("Transition_Open");
+        
+        // Wait for open animation to complete
+        yield return new WaitForSeconds(GetAnimationLength("Transition_Open"));
+        
+        // Hide transition panel
+        transitionPanel.SetActive(false);
+        
+        isTransitioning = false;
+        
+        // Process next transition in queue if any
+        if (transitionQueue.Count > 0)
+        {
+            var nextAction = transitionQueue.Dequeue();
+            StartCoroutine(PerformTransition(nextAction));
+        }
+    }
+    
+    // Helper method to get animation clip length
+    private float GetAnimationLength(string animationName)
+    {
+        if (transitionAnimator == null) return 0.5f; // Default fallback
+        
+        AnimationClip[] clips = transitionAnimator.runtimeAnimatorController.animationClips;
+        foreach (AnimationClip clip in clips)
+        {
+            if (clip.name == animationName)
+            {
+                return clip.length;
+            }
+        }
+        return 0.5f; // Default fallback if animation not found
     }
 
     public void SetImage(byte[] imageBytes)
@@ -87,46 +170,60 @@ public class GameManager : MonoBehaviour
         messagePanel.SetActive(true);
     }
 
+    // Updated methods with transition support
     public void GotoRolesPanel()
     {
-        lobbyPanel.SetActive(false);
-        rolsPanel.SetActive(true);
+        TransitionToPanel(() =>
+        {
+            lobbyPanel.SetActive(false);
+            rolsPanel.SetActive(true);
+        });
     }
 
     public void GotoShowRolePanel(string RoleName, string RoleAct, string RoleTeam)
     {
-        rolsPanel.SetActive(false);
-        showRolePanel.SetActive(true);
+        TransitionToPanel(() =>
+        {
+            rolsPanel.SetActive(false);
+            showRolePanel.SetActive(true);
 
-        roleName = RoleName;
-        roleAct = RoleAct;
-        roleTeam = RoleTeam;
-        showRoleTxt.text = RoleName;
+            roleName = RoleName;
+            roleAct = RoleAct;
+            roleTeam = RoleTeam;
+            showRoleTxt.text = RoleName;
 
-        Debug.Log(roleAct + ">" + roleTeam);
+            Debug.Log(roleAct + ">" + roleTeam);
+        });
     }
 
     public void ShowDayTalk(string turnID, string turnName)
     {
-        showRolePanel.SetActive(false);
-
-        dayTalkPlayerName.text = turnName;
-        dayTalkPanel.SetActive(true);
+        TransitionToPanel(() =>
+        {
+            showRolePanel.SetActive(false);
+            dayTalkPlayerName.text = turnName;
+            dayTalkPanel.SetActive(true);
+        });
     }
 
     public void ShowDayVote(string turnID, string turnName)
     {
-        dayTalkPanel.SetActive(false);
-
-        underVoteID = turnID;
-        dayVotePlayerName.text = turnName;
-        dayVotePanel.SetActive(true);
-        dayVoteBtn.SetActive(true);
+        TransitionToPanel(() =>
+        {
+            dayTalkPanel.SetActive(false);
+            underVoteID = turnID;
+            dayVotePlayerName.text = turnName;
+            dayVotePanel.SetActive(true);
+            dayVoteBtn.SetActive(true);
+        });
     }
 
     public void EndDayVoting()
     {
-        dayVotePanel.SetActive(false);
+        TransitionToPanel(() =>
+        {
+            dayVotePanel.SetActive(false);
+        });
     }
 
     public void OnBtn_DayVote()
@@ -137,12 +234,18 @@ public class GameManager : MonoBehaviour
 
     public void GotoNight(string[] datas)
     {
-        nightPanel.Open(datas, GetComponent<MOBGameSDK>().GetMyPlayerId(),this);
+        TransitionToPanel(() =>
+        {
+            nightPanel.Open(datas, GetComponent<MOBGameSDK>().GetMyPlayerId(), this);
+        });
     }
 
     public void EndNight()
     {
-        nightPanel.gameObject.SetActive(false);
+        TransitionToPanel(() =>
+        {
+            nightPanel.gameObject.SetActive(false);
+        });
     }
 
     public void SendMessageTo(string targetPlayerId, string message)
@@ -162,27 +265,69 @@ public class GameManager : MonoBehaviour
 
     public void ShowDie()
     {
-        diePanel.SetActive(true);
+        TransitionToPanel(() =>
+        {
+            diePanel.SetActive(true);
+        });
     }
 
     public void ShowWinMafia()
     {
-        winMafiaPanel.SetActive(true);
+        TransitionToPanel(() =>
+        {
+            winMafiaPanel.SetActive(true);
+        });
     }
 
     public void ShowWinCitizen()
     {
-        winCitizenPanel.SetActive(true);
+        TransitionToPanel(() =>
+        {
+            winCitizenPanel.SetActive(true);
+        });
     }
+
     public void ResetAll()
     {
+        // Stop any ongoing transitions and clear queue
+        StopAllCoroutines();
+        isTransitioning = false;
+        transitionQueue.Clear();
+        
+        // Hide transition panel
+        if (transitionPanel != null)
+        {
+            transitionPanel.SetActive(false);
+        }
+        
+        // Reset all panels immediately (no transition needed for reset)
         lobbyPanel.SetActive(false);
         rolsPanel.SetActive(false);
         showRolePanel.SetActive(false);
         dayTalkPanel.SetActive(false);
         dayVotePanel.SetActive(false);
         diePanel.SetActive(false);
+        winMafiaPanel.SetActive(false);
+        winCitizenPanel.SetActive(false);
         nightPanel.gameObject.SetActive(false);
     }
 
+    // Optional: Method to transition without closing current panels (for overlays)
+    public void ShowOverlayPanel(GameObject panel)
+    {
+        TransitionToPanel(() =>
+        {
+            panel.SetActive(true);
+        });
+    }
+
+    // Optional: Method for immediate panel switch without transition (for emergency cases)
+    public void ImmediatePanelSwitch(System.Action panelSwitchAction)
+    {
+        StopAllCoroutines();
+        isTransitioning = false;
+        transitionQueue.Clear();
+        transitionPanel.SetActive(false);
+        panelSwitchAction?.Invoke();
+    }
 }
