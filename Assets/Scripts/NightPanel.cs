@@ -66,6 +66,7 @@ public class NightPanel : MonoBehaviour
                 if (t.GetComponent<PlayerItem>().id == selectedID) gameManager.ShowMessage(t.GetComponent<PlayerItem>().role);
                 Destroy(t.gameObject);
             }
+            gameManager.SendStringToTV("NightAct:Spy:" + selectedID);
         }
         else if (myAct == "Mafia")
         {
@@ -78,6 +79,7 @@ public class NightPanel : MonoBehaviour
                 }
                 Destroy(t.gameObject);
             }
+            gameManager.SendStringToTV("NightAct:Mafia:" + selectedID);
         }
         else if (myAct == "Godfather")
         {
@@ -97,6 +99,7 @@ public class NightPanel : MonoBehaviour
             {
                 Destroy(t.gameObject);
             }
+            gameManager.SendStringToTV("NightAct:Citizen:" + selectedID);
         }
         else if (myAct == "Dr")
         {
