@@ -195,6 +195,7 @@ public class GameManager : MonoBehaviour
             roleTeam = RoleTeam;
             showRoleTxt.text = RoleName;
 
+            showRolePanel.GetComponent<RoleShowPanel>().SetData(RoleName);
             Debug.Log(roleAct + ">" + roleTeam);
         });
     }
