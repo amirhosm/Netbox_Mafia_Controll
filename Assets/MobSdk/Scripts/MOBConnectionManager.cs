@@ -40,6 +40,7 @@ public class MOBConnectionManager : MonoBehaviour
     public event Action OnTVFucked;
     public event Action<string> OnTVGotString;
     public event Action<string, byte[]> OnTVGotNude;
+    public event Action<string, byte[], string> OnGotAvatar;
     public event Action<string, string> GotNudeFrom;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -328,6 +329,21 @@ public class MOBConnectionManager : MonoBehaviour
                         byte[] trimmedData = new byte[imageSize];
                         Array.Copy(imageData, 0, trimmedData, 0, imageSize);
                         OnTVGotNude?.Invoke(myPlayerId, trimmedData);
+                    }
+                }
+            }
+            else if (message.StartsWith("AVATAR:"))
+            {
+                int headerEnd = message.IndexOf('\n');
+                if (headerEnd > 0)
+                {
+                    int imageSize = int.Parse(message.Split(':')[2]);
+                    byte[] imageData = Encoding.UTF8.GetBytes(message.Substring(headerEnd + 1));
+                    if (imageData.Length >= imageSize)
+                    {
+                        byte[] trimmedData = new byte[imageSize];
+                        Array.Copy(imageData, 0, trimmedData, 0, imageSize);
+                        OnGotAvatar?.Invoke(myPlayerId, trimmedData, message.Split(':')[1]);
                     }
                 }
             }

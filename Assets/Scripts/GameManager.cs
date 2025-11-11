@@ -29,9 +29,13 @@ public class GameManager : MonoBehaviour
     [SerializeField] RTLTextMeshPro showRoleTxt;
     [Header("Day Talk")]
     [SerializeField] RTLTextMeshPro dayTalkPlayerName;
+    [SerializeField] Texture2D defaultAvatar;
+    [SerializeField] RawImage dayPlayerAvatar;
     [Header("Day Vote")]
     [SerializeField] RTLTextMeshPro dayVotePlayerName;
     [SerializeField] GameObject dayVoteBtn;
+
+    Dictionary<string, byte[]> AllAvatars = new Dictionary<string, byte[]>();
     
     string underVoteID;
     string roleName, roleAct, roleTeam;
@@ -195,7 +199,7 @@ public class GameManager : MonoBehaviour
             roleTeam = RoleTeam;
             showRoleTxt.text = RoleName;
 
-            showRolePanel.GetComponent<RoleShowPanel>().SetData(RoleName);
+            showRolePanel.GetComponent<RoleShowPanel>().SetData(RoleName, RoleAct);
             Debug.Log(roleAct + ">" + roleTeam);
         });
     }
@@ -207,6 +211,13 @@ public class GameManager : MonoBehaviour
             showRolePanel.SetActive(false);
             dayTalkPlayerName.text = turnName;
             dayTalkPanel.SetActive(true);
+            dayPlayerAvatar.texture = defaultAvatar;
+            if(AllAvatars.ContainsKey(turnID))
+            {
+                Texture2D texture = new Texture2D(2, 2);
+                bool loaded = texture.LoadImage(AllAvatars[turnID]); // Auto-resizes texture
+                dayPlayerAvatar.texture = texture;
+            }
         });
     }
 
@@ -297,6 +308,11 @@ public class GameManager : MonoBehaviour
         {
             kickedPanel.SetActive(true);
         });
+    }
+
+    public void AddAvatar(string playerId, byte[] avatar)
+    {
+        AllAvatars.Add(playerId, avatar);
     }
 
     public void ResetAll()
