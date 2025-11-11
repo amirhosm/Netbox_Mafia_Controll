@@ -187,7 +187,7 @@ public class GameManager : MonoBehaviour
         });
     }
 
-    public void GotoShowRolePanel(string RoleName, string RoleAct, string RoleTeam)
+    public void GotoShowRolePanel(string RoleName, string RoleTeam, string RoleAct)
     {
         TransitionToPanel(() =>
         {
