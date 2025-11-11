@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject diePanel;
     [SerializeField] GameObject winMafiaPanel;
     [SerializeField] GameObject winCitizenPanel;
+    [SerializeField] GameObject kickedPanel;
     [SerializeField] NightPanel nightPanel;
     [SerializeField] GameObject transitionPanel;
     [Header("Show Role")]
@@ -88,7 +89,9 @@ public class GameManager : MonoBehaviour
         
         // Execute the panel switch action
         panelSwitchAction?.Invoke();
-        
+
+        yield return new WaitForSeconds(1f);
+
         // Play open animation
         transitionAnimator.Play("Transition_Open");
         
@@ -192,6 +195,7 @@ public class GameManager : MonoBehaviour
             roleTeam = RoleTeam;
             showRoleTxt.text = RoleName;
 
+            showRolePanel.GetComponent<RoleShowPanel>().SetData(RoleName);
             Debug.Log(roleAct + ">" + roleTeam);
         });
     }
@@ -284,6 +288,14 @@ public class GameManager : MonoBehaviour
         TransitionToPanel(() =>
         {
             winCitizenPanel.SetActive(true);
+        });
+    }
+
+    public void ShowKicked()
+    {
+        TransitionToPanel(() =>
+        {
+            kickedPanel.SetActive(true);
         });
     }
 
