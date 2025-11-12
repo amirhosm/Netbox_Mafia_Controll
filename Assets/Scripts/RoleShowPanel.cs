@@ -23,19 +23,19 @@ public class RoleShowPanel : MonoBehaviour
     bool RoleRevealed = false;
     bool RoleIsRevealable = true;
 
-    public void SetData(string roleName)
+    public void SetData(string roleName, string roelAct)
     {
         RoleNameText.text = roleName;
 
-        if (roleName == "Godfather")
+        if (roelAct == "Godfather")
         {
             RoleImage.sprite = GodfatherSprite;
         }
-        else if (roleName == "Detective")
+        else if (roelAct == "Spy")
         {
             RoleImage.sprite = DetectiveSprite;
         }
-        else if (roleName == "Mafia")
+        else if (roelAct == "Mafia")
         {
             int rnd = Random.Range(0, 100);
             if (rnd > 66)
@@ -45,19 +45,19 @@ public class RoleShowPanel : MonoBehaviour
             else if (rnd <= 33)
                 RoleImage.sprite = MafiaFemaleSprite;
         }
-        else if (roleName == "Doctor Lecter")
+        else if (roelAct == "DrLecter")
         {
             RoleImage.sprite = DoctorLecterSprite;
         }
-        else if (roleName == "Doctor")
+        else if (roelAct == "Dr")
         {
             RoleImage.sprite = DoctorSprite;
         }
-        else if (roleName == "Sniper")
+        else if (roelAct == "Sniper")
         {
             RoleImage.sprite = SniperSprite;
         }
-        else if (roleName == "Citizen")
+        else if (roelAct == "Citizen")
         {
             int rnd = Random.Range(0, 100);
             if (rnd > 50)

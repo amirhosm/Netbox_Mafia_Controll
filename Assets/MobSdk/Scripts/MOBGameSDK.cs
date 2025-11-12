@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 // Inherit from this in your mobile game scripts
 public class MOBGameSDK : MonoBehaviour
@@ -21,7 +22,10 @@ public class MOBGameSDK : MonoBehaviour
         connectionManager.OnTVGotString += OnTVGotString;
         //connectionManager.OnTVGotNude += OnTVGotNude;
         connectionManager.GotNudeFrom += GotNudeFrom;
+        connectionManager.OnGotAvatar += GotAvatar;
     }
+
+   
 
     // Override these in your game
     protected virtual void OnTVConnected()
@@ -88,6 +92,11 @@ public class MOBGameSDK : MonoBehaviour
         {
             gameManager.MafiaToGodfatherInNight(message.Split(':')[1]);
         }
+    }
+
+    private void GotAvatar(string arg1, byte[] arg2, string playerId)
+    {
+        gameManager.AddAvatar(playerId, arg2);
     }
 
     protected virtual void OnTVGotNude(byte[] imageData)
