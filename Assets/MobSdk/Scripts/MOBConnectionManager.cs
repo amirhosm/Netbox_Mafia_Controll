@@ -235,6 +235,11 @@ public class MOBConnectionManager : MonoBehaviour
 #if UNITY_WEBGL && !UNITY_EDITOR
     private void Update()
     {
+        //Periodic PING to keep connection alive
+        if (isConnected && Time.frameCount % 120 == 0) // Every 2 seconds at 60fps
+        {
+            SendToTV("PING");
+        }
         if (isWebGL && isRunning && webSocketId >= 0)
         {
             int state = WebSocketGetState(webSocketId);
