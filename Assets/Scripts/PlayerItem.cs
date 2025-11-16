@@ -60,6 +60,7 @@ public class PlayerItem : MonoBehaviour
         if (team == "Black")
         {
             selectBtn.SetActive(false);
+            GetComponent<Button>().interactable = false;
             roleTxt.text = role;
         }
     }

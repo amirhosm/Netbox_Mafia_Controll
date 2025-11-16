@@ -44,6 +44,9 @@ public class GameManager : MonoBehaviour
     
     // Queue system for handling multiple rapid transitions
     private Queue<System.Action> transitionQueue = new Queue<System.Action>();
+    
+    // Track which panels have been shown for the first time in the current session
+    private HashSet<GameObject> panelsShownFirstTime = new HashSet<GameObject>();
 
     private void Start()
     {
@@ -68,16 +71,34 @@ public class GameManager : MonoBehaviour
     }
 
     // Main transition method that handles the smooth panel transitions
-    private void TransitionToPanel(System.Action panelSwitchAction)
+    private void TransitionToPanel(System.Action panelSwitchAction, GameObject targetPanel = null)
     {
-        if (isTransitioning)
-        {
-            // If already transitioning, queue the action
-            transitionQueue.Enqueue(panelSwitchAction);
-            return;
-        }
+        // Check if this is the first time showing this panel
+        bool shouldTransition = targetPanel == null || !panelsShownFirstTime.Contains(targetPanel);
         
-        StartCoroutine(PerformTransition(panelSwitchAction));
+        if (shouldTransition)
+        {
+            // Mark panel as shown and reset all other panels' first-time status
+            if (targetPanel != null)
+            {
+                panelsShownFirstTime.Clear();
+                panelsShownFirstTime.Add(targetPanel);
+            }
+            
+            if (isTransitioning)
+            {
+                // If already transitioning, queue the action
+                transitionQueue.Enqueue(panelSwitchAction);
+                return;
+            }
+            
+            StartCoroutine(PerformTransition(panelSwitchAction));
+        }
+        else
+        {
+            // No transition, just execute the action immediately
+            panelSwitchAction?.Invoke();
+        }
     }
     
     private IEnumerator PerformTransition(System.Action panelSwitchAction)
@@ -184,7 +205,7 @@ public class GameManager : MonoBehaviour
         {
             lobbyPanel.SetActive(false);
             rolsPanel.SetActive(true);
-        });
+        }, rolsPanel);
     }
 
     public void GotoShowRolePanel(string RoleName, string RoleTeam, string RoleAct)
@@ -201,7 +222,7 @@ public class GameManager : MonoBehaviour
 
             showRolePanel.GetComponent<RoleShowPanel>().SetData(RoleName, RoleAct);
             Debug.Log(roleAct + ">" + roleTeam);
-        });
+        }, showRolePanel);
     }
 
     public void ShowDayTalk(string turnID, string turnName)
@@ -218,7 +239,7 @@ public class GameManager : MonoBehaviour
                 bool loaded = texture.LoadImage(AllAvatars[turnID]); // Auto-resizes texture
                 dayPlayerAvatar.texture = texture;
             }
-        });
+        }, dayTalkPanel);
     }
 
     public void ShowDayVote(string turnID, string turnName)
@@ -230,7 +251,7 @@ public class GameManager : MonoBehaviour
             dayVotePlayerName.text = turnName;
             dayVotePanel.SetActive(true);
             dayVoteBtn.SetActive(true);
-        });
+        }, dayVotePanel);
     }
 
     public void EndDayVoting()
@@ -252,7 +273,7 @@ public class GameManager : MonoBehaviour
         TransitionToPanel(() =>
         {
             nightPanel.Open(datas, GetComponent<MOBGameSDK>().GetMyPlayerId(), this);
-        });
+        }, nightPanel.gameObject);
     }
 
     public void EndNight()
@@ -283,7 +304,7 @@ public class GameManager : MonoBehaviour
         TransitionToPanel(() =>
         {
             diePanel.SetActive(true);
-        });
+        }, diePanel);
     }
 
     public void ShowWinMafia()
@@ -291,7 +312,7 @@ public class GameManager : MonoBehaviour
         TransitionToPanel(() =>
         {
             winMafiaPanel.SetActive(true);
-        });
+        }, winMafiaPanel);
     }
 
     public void ShowWinCitizen()
@@ -299,7 +320,7 @@ public class GameManager : MonoBehaviour
         TransitionToPanel(() =>
         {
             winCitizenPanel.SetActive(true);
-        });
+        }, winCitizenPanel);
     }
 
     public void ShowKicked()
@@ -307,7 +328,7 @@ public class GameManager : MonoBehaviour
         TransitionToPanel(() =>
         {
             kickedPanel.SetActive(true);
-        });
+        }, kickedPanel);
     }
 
     public void AddAvatar(string playerId, byte[] avatar)
@@ -321,6 +342,9 @@ public class GameManager : MonoBehaviour
         StopAllCoroutines();
         isTransitioning = false;
         transitionQueue.Clear();
+        
+        // Reset first-time panel tracking
+        panelsShownFirstTime.Clear();
         
         // Hide transition panel
         if (transitionPanel != null)
@@ -337,6 +361,7 @@ public class GameManager : MonoBehaviour
         diePanel.SetActive(false);
         winMafiaPanel.SetActive(false);
         winCitizenPanel.SetActive(false);
+        kickedPanel.SetActive(false);
         nightPanel.gameObject.SetActive(false);
     }
 
@@ -346,7 +371,7 @@ public class GameManager : MonoBehaviour
         TransitionToPanel(() =>
         {
             panel.SetActive(true);
-        });
+        }, panel);
     }
 
     // Optional: Method for immediate panel switch without transition (for emergency cases)
