@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -86,6 +84,8 @@ public class RoleShowPanel : MonoBehaviour
             RoleRevealed = false;
             RoleIsRevealable = false;
         }
+
+        FindFirstObjectByType<MOBGameSDK>().SendStringToTV("SeenRole");
     }
 
     public void AnimatorCallback()
