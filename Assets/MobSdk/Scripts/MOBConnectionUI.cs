@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 using System.Text;
+using UnityEngine.SceneManagement;
 
 public class MOBConnectionUI : MonoBehaviour
 {
@@ -20,7 +21,8 @@ public class MOBConnectionUI : MonoBehaviour
     public bool enableDeepLink = true;
     public string deepLinkParameterName = "connect";
 
-    private bool hasAttemptedAutoConnect = false;
+    private static bool hasAttemptedAutoConnect = false;
+    private static string lastConnectionString = "";
     private float connectionTimer = 0f;
     private bool isConnecting = false;
 
@@ -50,6 +52,16 @@ public class MOBConnectionUI : MonoBehaviour
         {
             CheckDeepLinkAndConnect();
         }
+        else if (!string.IsNullOrEmpty(lastConnectionString))
+        {
+            // If deep link is disabled but we have a stored connection string (from reconnect), use it
+            AddDebugLog("Reconnecting with stored connection string");
+            if (connectionInput != null)
+            {
+                connectionInput.text = lastConnectionString;
+            }
+            AttemptConnection(lastConnectionString);
+        }
     }
 
     private void Update()
@@ -72,9 +84,25 @@ public class MOBConnectionUI : MonoBehaviour
 
     private void CheckDeepLinkAndConnect()
     {
-        if (hasAttemptedAutoConnect)
+        if (hasAttemptedAutoConnect && string.IsNullOrEmpty(lastConnectionString))
         {
-            Debug.Log("[MOBConnectionUI] Auto-connect already attempted");
+            Debug.Log("[MOBConnectionUI] Auto-connect already attempted and no stored connection");
+            return;
+        }
+
+        // If we have a stored connection string (from reconnect), don't extract from URL again
+        if (!string.IsNullOrEmpty(lastConnectionString))
+        {
+            Debug.Log("[MOBConnectionUI] Using stored connection string for reconnect");
+            AddDebugLog("Reconnecting...");
+
+            if (connectionInput != null)
+            {
+                connectionInput.text = lastConnectionString;
+            }
+
+            SetStatus("Reconnecting...", Color.cyan);
+            AttemptConnection(lastConnectionString);
             return;
         }
 
@@ -124,6 +152,9 @@ public class MOBConnectionUI : MonoBehaviour
                     {
                         Debug.Log($"[MOBConnectionUI] Decoded: {connectionString}");
                         AddDebugLog($"Decoded: {connectionString}");
+                        
+                        // Store the connection string for reconnect scenarios
+                        lastConnectionString = connectionString;
                         
                         if (connectionInput != null)
                         {
@@ -195,6 +226,9 @@ public class MOBConnectionUI : MonoBehaviour
             AddDebugLog("ERROR: Empty connection string");
             return;
         }
+
+        // Store the connection string for potential reconnect
+        lastConnectionString = connectionString;
 
         if (ParseConnectionString(connectionString, out string ip, out int port))
         {
@@ -358,6 +392,16 @@ public class MOBConnectionUI : MonoBehaviour
         }
 
         return false;
+    }
+
+    public void OnReconnectButtonClicked()
+    {
+        Debug.Log("[MOBConnectionUI] Reconnect button clicked");
+        AddDebugLog("Reconnecting...");
+
+        // Don't reset the static variables - they will persist across scene reload
+        // Just reload the scene and the Start() method will use the stored connection string
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     private void OnConnected()

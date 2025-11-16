@@ -39,6 +39,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] float badgeDisplayDuration = 3f;
 
     Dictionary<string, byte[]> AllAvatars = new Dictionary<string, byte[]>();
+    Dictionary<string, string> playerNames = new Dictionary<string, string>();
     
     string underVoteID;
     string roleName, roleAct, roleTeam;
@@ -53,10 +54,10 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        nameInput.onSelect.AddListener((t) =>
-        {
-            keyboard.SetActive(true);
-        });
+        //nameInput.onSelect.AddListener((t) =>
+        //{
+        //    keyboard.SetActive(true);
+        //});
         
         // Get the Animator component from the transition panel
         if (transitionPanel != null)
@@ -230,6 +231,12 @@ public class GameManager : MonoBehaviour
 
     public void ShowDayTalk(string turnID, string turnName)
     {
+        // Store player name for later use
+        if (!playerNames.ContainsKey(turnID))
+        {
+            playerNames[turnID] = turnName;
+        }
+        
         TransitionToPanel(() =>
         {
             showRolePanel.SetActive(false);
@@ -247,6 +254,12 @@ public class GameManager : MonoBehaviour
 
     public void ShowDayVote(string turnID, string turnName)
     {
+        // Store player name for later use
+        if (!playerNames.ContainsKey(turnID))
+        {
+            playerNames[turnID] = turnName;
+        }
+        
         TransitionToPanel(() =>
         {
             dayTalkPanel.SetActive(false);
@@ -297,11 +310,14 @@ public class GameManager : MonoBehaviour
         
         Debug.Log($"Player {voterPlayerId} has voted! Showing badge...");
         
-        // Show the vote badge
-        ShowVoteBadge();
+        // Get the player name from the dictionary
+        string voterName = playerNames.ContainsKey(voterPlayerId) ? playerNames[voterPlayerId] : "Unknown Player";
+        
+        // Show the vote badge with player name
+        ShowVoteBadge(voterName);
     }
     
-    private void ShowVoteBadge()
+    private void ShowVoteBadge(string playerName)
     {
         if (dayVotePlayerBadge == null)
         {
@@ -323,6 +339,25 @@ public class GameManager : MonoBehaviour
         
         badgeInstance.SetActive(true);
         
+        // Find TextMeshPro component in children and set the player name
+        TextMeshProUGUI tmpComponent = badgeInstance.GetComponentInChildren<TextMeshProUGUI>();
+        RTLTextMeshPro rtlTmpComponent = badgeInstance.GetComponentInChildren<RTLTextMeshPro>();
+        
+        if (rtlTmpComponent != null)
+        {
+            rtlTmpComponent.text = playerName;
+            Debug.Log($"Set RTLTextMeshPro text to: {playerName}");
+        }
+        else if (tmpComponent != null)
+        {
+            tmpComponent.text = playerName;
+            Debug.Log($"Set TextMeshProUGUI text to: {playerName}");
+        }
+        else
+        {
+            Debug.LogWarning("No TextMeshPro component found in badge children!");
+        }
+        
         // Destroy the badge after the specified duration
         StartCoroutine(DestroyBadgeAfterDelay(badgeInstance, badgeDisplayDuration));
     }
@@ -340,6 +375,21 @@ public class GameManager : MonoBehaviour
 
     public void GotoNight(string[] datas)
     {
+        // Store player names from night data for vote notifications
+        for (int i = 1; i < datas.Length; i++)
+        {
+            string[] playerData = datas[i].Split(':');
+            if (playerData.Length >= 2)
+            {
+                string playerId = playerData[0];
+                string playerName = playerData[1];
+                if (!playerNames.ContainsKey(playerId))
+                {
+                    playerNames[playerId] = playerName;
+                }
+            }
+        }
+        
         TransitionToPanel(() =>
         {
             nightPanel.Open(datas, GetComponent<MOBGameSDK>().GetMyPlayerId(), this);
@@ -415,6 +465,9 @@ public class GameManager : MonoBehaviour
         
         // Reset first-time panel tracking
         panelsShownFirstTime.Clear();
+        
+        // Clear player names dictionary
+        playerNames.Clear();
         
         // Hide transition panel
         if (transitionPanel != null)
