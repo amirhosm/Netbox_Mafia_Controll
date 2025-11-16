@@ -34,6 +34,9 @@ public class GameManager : MonoBehaviour
     [Header("Day Vote")]
     [SerializeField] RTLTextMeshPro dayVotePlayerName;
     [SerializeField] GameObject dayVoteBtn;
+    [SerializeField] GameObject dayVotePlayerBadge;
+    [SerializeField] Transform badgeSpawnPoint;
+    [SerializeField] float badgeDisplayDuration = 3f;
 
     Dictionary<string, byte[]> AllAvatars = new Dictionary<string, byte[]>();
     
@@ -266,6 +269,73 @@ public class GameManager : MonoBehaviour
     {
         dayVoteBtn.SetActive(false);
         SendStringToTV("vote");
+        
+        // Notify all other players that this player has voted
+        BroadcastVoteNotification();
+    }
+    
+    // Broadcast vote notification to all other players
+    private void BroadcastVoteNotification()
+    {
+        string myPlayerId = GetComponent<MOBGameSDK>().GetMyPlayerId();
+        
+        // Send a broadcast message through the TV to all other players
+        // Format: "VOTE_NOTIFICATION:playerID"
+        SendStringToTV($"broadcast_vote:{myPlayerId}");
+    }
+    
+    // This method is called when receiving a vote notification from another player
+    public void OnPlayerVoted(string voterPlayerId)
+    {
+        // Don't show badge for own vote
+        string myPlayerId = GetComponent<MOBGameSDK>().GetMyPlayerId();
+        if (voterPlayerId == myPlayerId)
+        {
+            Debug.Log("Ignoring own vote notification");
+            return;
+        }
+        
+        Debug.Log($"Player {voterPlayerId} has voted! Showing badge...");
+        
+        // Show the vote badge
+        ShowVoteBadge();
+    }
+    
+    private void ShowVoteBadge()
+    {
+        if (dayVotePlayerBadge == null)
+        {
+            Debug.LogError("dayVotePlayerBadge is not assigned!");
+            return;
+        }
+        
+        // Instantiate the badge
+        GameObject badgeInstance;
+        if (badgeSpawnPoint != null)
+        {
+            badgeInstance = Instantiate(dayVotePlayerBadge, badgeSpawnPoint.position, Quaternion.identity, badgeSpawnPoint);
+        }
+        else
+        {
+            // If no spawn point is set, instantiate as child of the dayVotePanel
+            badgeInstance = Instantiate(dayVotePlayerBadge, dayVotePanel.transform);
+        }
+        
+        badgeInstance.SetActive(true);
+        
+        // Destroy the badge after the specified duration
+        StartCoroutine(DestroyBadgeAfterDelay(badgeInstance, badgeDisplayDuration));
+    }
+    
+    private IEnumerator DestroyBadgeAfterDelay(GameObject badge, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        
+        if (badge != null)
+        {
+            Destroy(badge);
+            Debug.Log("Vote badge destroyed");
+        }
     }
 
     public void GotoNight(string[] datas)
