@@ -1,4 +1,4 @@
-using RTLTMPro;
+﻿using RTLTMPro;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -13,13 +13,16 @@ public class NightPanel : MonoBehaviour
     string myID, myAct, myTeam;
     string selectedID;
     GameManager gameManager;
+    int nightNum;
     Dictionary<string, PlayerItem> AllPlayers = new Dictionary<string, PlayerItem>();
 
-    public void Open(string[] datas,string MyID, GameManager gm)
+    public void Open(string[] datas, string MyID, GameManager gm)
     {
         gameObject.SetActive(true);
         gameManager = gm;
         myID = MyID;
+        nightNum = int.Parse(datas[0].Split(':')[1]);
+
         if (listParent.childCount > 0) foreach (Transform t in listParent) Destroy(t.gameObject);
 
         for (int i = 1; i < datas.Length; i++)
@@ -34,6 +37,13 @@ public class NightPanel : MonoBehaviour
                 myTeam = playerItem.team;
                 playerItem.gameObject.SetActive(false);
             }
+        }
+
+        ShuffleChildren(listParent);
+
+        if (nightNum == 1)
+        {
+            actTxt.text = (myTeam == "Black") ? "شب معارفه: الکی انتخاب کن" : "شب معارفه: مافیا رو حدس بزن";
         }
 
         if (myTeam == "Black")
@@ -63,7 +73,10 @@ public class NightPanel : MonoBehaviour
         {
             foreach (Transform t in listParent)
             {
-                if (t.GetComponent<PlayerItem>().id == selectedID) gameManager.ShowMessage(t.GetComponent<PlayerItem>().role);
+                if (t.GetComponent<PlayerItem>().id == selectedID)
+                {
+                    gameManager.ShowMessage((t.GetComponent<PlayerItem>().roleAction == "Godfather" || t.GetComponent<PlayerItem>().team == "White") ? "شهروند" : "مافیا");
+                }
                 Destroy(t.gameObject);
             }
             gameManager.SendStringToTV("NightAct:Spy:" + selectedID);
@@ -141,5 +154,27 @@ public class NightPanel : MonoBehaviour
                 }
             }
         }
+    }
+
+    public static void ShuffleChildren(Transform parent)
+    {
+        int count = parent.childCount;
+        if (count <= 1) return;
+
+        // Collect children in a list
+        List<Transform> children = new List<Transform>(count);
+        for (int i = 0; i < count; i++)
+            children.Add(parent.GetChild(i));
+
+        // Fisher–Yates shuffle
+        for (int i = count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (children[i], children[j]) = (children[j], children[i]);
+        }
+
+        // Reapply sibling indices
+        for (int i = 0; i < children.Count; i++)
+            children[i].SetSiblingIndex(i);
     }
 }
