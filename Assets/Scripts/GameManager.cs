@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
@@ -187,6 +188,9 @@ public class GameManager : MonoBehaviour
     }
     public void OnLobbyReadyBtn()
     {
+        var eventSystem = EventSystem.current;
+        if (!eventSystem.alreadySelecting) eventSystem.SetSelectedGameObject(null);
+
         if (!string.IsNullOrEmpty(nameInput.text))
         {
             GetComponent<MOBGameSDK>().SendStringToTV("ready|" + nameInput.text + "|a");
