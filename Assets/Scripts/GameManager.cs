@@ -35,8 +35,12 @@ public class GameManager : MonoBehaviour
     [Header("Day Vote")]
     [SerializeField] RTLTextMeshPro dayVotePlayerName;
     [SerializeField] GameObject dayVoteBtn;
+    [SerializeField] GameObject dayVotePlayerBadge;
+    [SerializeField] Transform badgeSpawnPoint;
+    [SerializeField] float badgeDisplayDuration = 3f;
 
     Dictionary<string, byte[]> AllAvatars = new Dictionary<string, byte[]>();
+    Dictionary<string, string> playerNames = new Dictionary<string, string>();
     
     string underVoteID;
     string roleName, roleAct, roleTeam;
@@ -51,10 +55,10 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        nameInput.onSelect.AddListener((t) =>
-        {
-            keyboard.SetActive(true);
-        });
+        //nameInput.onSelect.AddListener((t) =>
+        //{
+        //    keyboard.SetActive(true);
+        //});
         
         // Get the Animator component from the transition panel
         if (transitionPanel != null)
@@ -229,6 +233,12 @@ public class GameManager : MonoBehaviour
 
     public void ShowDayTalk(string turnID, string turnName)
     {
+        // Store player name for later use
+        if (!playerNames.ContainsKey(turnID))
+        {
+            playerNames[turnID] = turnName;
+        }
+        
         TransitionToPanel(() =>
         {
             showRolePanel.SetActive(false);
@@ -246,6 +256,12 @@ public class GameManager : MonoBehaviour
 
     public void ShowDayVote(string turnID, string turnName)
     {
+        // Store player name for later use
+        if (!playerNames.ContainsKey(turnID))
+        {
+            playerNames[turnID] = turnName;
+        }
+        
         TransitionToPanel(() =>
         {
             dayTalkPanel.SetActive(false);
@@ -268,10 +284,114 @@ public class GameManager : MonoBehaviour
     {
         dayVoteBtn.SetActive(false);
         SendStringToTV("vote");
+        
+        // Notify all other players that this player has voted
+        BroadcastVoteNotification();
+    }
+    
+    // Broadcast vote notification to all other players
+    private void BroadcastVoteNotification()
+    {
+        string myPlayerId = GetComponent<MOBGameSDK>().GetMyPlayerId();
+        
+        // Send a broadcast message through the TV to all other players
+        // Format: "VOTE_NOTIFICATION:playerID"
+        SendStringToTV($"broadcast_vote:{myPlayerId}");
+    }
+    
+    // This method is called when receiving a vote notification from another player
+    public void OnPlayerVoted(string voterPlayerId)
+    {
+        // Don't show badge for own vote
+        string myPlayerId = GetComponent<MOBGameSDK>().GetMyPlayerId();
+        if (voterPlayerId == myPlayerId)
+        {
+            Debug.Log("Ignoring own vote notification");
+            return;
+        }
+        
+        Debug.Log($"Player {voterPlayerId} has voted! Showing badge...");
+        
+        // Get the player name from the dictionary
+        string voterName = playerNames.ContainsKey(voterPlayerId) ? playerNames[voterPlayerId] : "Unknown Player";
+        
+        // Show the vote badge with player name
+        ShowVoteBadge(voterName);
+    }
+    
+    private void ShowVoteBadge(string playerName)
+    {
+        if (dayVotePlayerBadge == null)
+        {
+            Debug.LogError("dayVotePlayerBadge is not assigned!");
+            return;
+        }
+        
+        // Instantiate the badge
+        GameObject badgeInstance;
+        if (badgeSpawnPoint != null)
+        {
+            badgeInstance = Instantiate(dayVotePlayerBadge, badgeSpawnPoint.position, Quaternion.identity, badgeSpawnPoint);
+        }
+        else
+        {
+            // If no spawn point is set, instantiate as child of the dayVotePanel
+            badgeInstance = Instantiate(dayVotePlayerBadge, dayVotePanel.transform);
+        }
+        
+        badgeInstance.SetActive(true);
+        
+        // Find TextMeshPro component in children and set the player name
+        TextMeshProUGUI tmpComponent = badgeInstance.GetComponentInChildren<TextMeshProUGUI>();
+        RTLTextMeshPro rtlTmpComponent = badgeInstance.GetComponentInChildren<RTLTextMeshPro>();
+        
+        if (rtlTmpComponent != null)
+        {
+            rtlTmpComponent.text = playerName;
+            Debug.Log($"Set RTLTextMeshPro text to: {playerName}");
+        }
+        else if (tmpComponent != null)
+        {
+            tmpComponent.text = playerName;
+            Debug.Log($"Set TextMeshProUGUI text to: {playerName}");
+        }
+        else
+        {
+            Debug.LogWarning("No TextMeshPro component found in badge children!");
+        }
+        
+        // Destroy the badge after the specified duration
+        StartCoroutine(DestroyBadgeAfterDelay(badgeInstance, badgeDisplayDuration));
+    }
+    
+    private IEnumerator DestroyBadgeAfterDelay(GameObject badge, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        
+        if (badge != null)
+        {
+            Destroy(badge);
+            Debug.Log("Vote badge destroyed");
+        }
     }
 
     public void GotoNight(string[] datas)
     {
+        // Store player names from night data for vote notifications
+        for (int i = 1; i < datas.Length; i++)
+        {
+            string[] playerData = datas[i].Split(':');
+            if (playerData.Length >= 2)
+            {
+                string playerId = playerData[0];
+                string playerName = playerData[1];
+                if (!playerNames.ContainsKey(playerId))
+                {
+                    playerNames[playerId] = playerName;
+                }
+            }
+        }
+        
         TransitionToPanel(() =>
         {
             nightPanel.Open(datas, GetComponent<MOBGameSDK>().GetMyPlayerId(), this);
@@ -347,6 +467,9 @@ public class GameManager : MonoBehaviour
         
         // Reset first-time panel tracking
         panelsShownFirstTime.Clear();
+        
+        // Clear player names dictionary
+        playerNames.Clear();
         
         // Hide transition panel
         if (transitionPanel != null)

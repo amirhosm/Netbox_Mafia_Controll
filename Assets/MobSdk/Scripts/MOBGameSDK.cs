@@ -109,12 +109,13 @@ public class MOBGameSDK : MonoBehaviour
 
     protected virtual void GotNudeFrom(string playerId, string message)
     {
-        Debug.Log($"[Game] Got image from player {playerId}");
-        // Convert base64 to texture if needed:
-        // byte[] imageData = System.Convert.FromBase64String(imageDataBase64);
-        // Texture2D texture = new Texture2D(2, 2);
-        // texture.LoadImage(imageData);
+        Debug.Log($"[Game] Got message from player {playerId}: {message}");
         
+        // Handle vote notifications from other players
+        if (message.StartsWith("VOTE_NOTIFICATION"))
+        {
+            gameManager.OnPlayerVoted(playerId);
+        }
     }
 
     // Helper functions for your game

@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 using System.Text;
+using UnityEngine.SceneManagement;
 
 public class MOBConnectionUI : MonoBehaviour
 {
@@ -14,15 +15,18 @@ public class MOBConnectionUI : MonoBehaviour
 
     [Header("Panels")]
     public GameObject connectionPanel;
+    public GameObject connectionMockPanel;
     public GameObject controllerPanel;
 
     [Header("Deep Link Settings")]
     public bool enableDeepLink = true;
     public string deepLinkParameterName = "connect";
 
-    private bool hasAttemptedAutoConnect = false;
+    private static bool hasAttemptedAutoConnect = false;
+    private static string lastConnectionString = "";
     private float connectionTimer = 0f;
     private bool isConnecting = false;
+    private bool wasReconnecting = false;
 
     private void Start()
     {
@@ -50,12 +54,39 @@ public class MOBConnectionUI : MonoBehaviour
         {
             CheckDeepLinkAndConnect();
         }
+        else if (!string.IsNullOrEmpty(lastConnectionString))
+        {
+            // If deep link is disabled but we have a stored connection string (from reconnect), use it
+            AddDebugLog("Reconnecting with stored connection string");
+            if (connectionInput != null)
+            {
+                connectionInput.text = lastConnectionString;
+            }
+            AttemptConnection(lastConnectionString);
+        }
     }
 
     private void Update()
     {
-        // Connection timeout detection
-        if (isConnecting)
+        // Check if ConnectionManager is reconnecting
+        if (MOBConnectionManager.Instance != null && MOBConnectionManager.Instance.IsReconnecting())
+        {
+            if (!wasReconnecting)
+            {
+                wasReconnecting = true;
+                SetStatus("Connection lost - Reconnecting...", Color.yellow);
+                AddDebugLog("Auto-reconnecting...");
+            }
+            return;
+        }
+        else if (wasReconnecting)
+        {
+            // Reconnection completed
+            wasReconnecting = false;
+        }
+
+        // Connection timeout detection (only for initial connection)
+        if (isConnecting && !MOBConnectionManager.Instance.IsReconnecting())
         {
             connectionTimer += Time.deltaTime;
 
@@ -72,9 +103,25 @@ public class MOBConnectionUI : MonoBehaviour
 
     private void CheckDeepLinkAndConnect()
     {
-        if (hasAttemptedAutoConnect)
+        if (hasAttemptedAutoConnect && string.IsNullOrEmpty(lastConnectionString))
         {
-            Debug.Log("[MOBConnectionUI] Auto-connect already attempted");
+            Debug.Log("[MOBConnectionUI] Auto-connect already attempted and no stored connection");
+            return;
+        }
+
+        // If we have a stored connection string (from reconnect), don't extract from URL again
+        if (!string.IsNullOrEmpty(lastConnectionString))
+        {
+            Debug.Log("[MOBConnectionUI] Using stored connection string for reconnect");
+            AddDebugLog("Reconnecting...");
+
+            if (connectionInput != null)
+            {
+                connectionInput.text = lastConnectionString;
+            }
+
+            SetStatus("Reconnecting...", Color.cyan);
+            AttemptConnection(lastConnectionString);
             return;
         }
 
@@ -124,6 +171,9 @@ public class MOBConnectionUI : MonoBehaviour
                     {
                         Debug.Log($"[MOBConnectionUI] Decoded: {connectionString}");
                         AddDebugLog($"Decoded: {connectionString}");
+                        
+                        // Store the connection string for reconnect scenarios
+                        lastConnectionString = connectionString;
                         
                         if (connectionInput != null)
                         {
@@ -195,6 +245,9 @@ public class MOBConnectionUI : MonoBehaviour
             AddDebugLog("ERROR: Empty connection string");
             return;
         }
+
+        // Store the connection string for potential reconnect
+        lastConnectionString = connectionString;
 
         if (ParseConnectionString(connectionString, out string ip, out int port))
         {
@@ -360,6 +413,16 @@ public class MOBConnectionUI : MonoBehaviour
         return false;
     }
 
+    public void OnReconnectButtonClicked()
+    {
+        Debug.Log("[MOBConnectionUI] Reconnect button clicked");
+        AddDebugLog("Reconnecting...");
+
+        // Don't reset the static variables - they will persist across scene reload
+        // Just reload the scene and the Start() method will use the stored connection string
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
     private void OnConnected()
     {
         Debug.Log("[MOBConnectionUI] Connection successful!");
@@ -368,20 +431,32 @@ public class MOBConnectionUI : MonoBehaviour
 
         isConnecting = false;
         connectionTimer = 0f;
+        wasReconnecting = false;
 
         Invoke(nameof(ShowControllerPanel), 1f);
     }
 
     private void OnDisconnected()
     {
+        // Only show disconnection UI if not currently reconnecting
+        if (MOBConnectionManager.Instance != null && MOBConnectionManager.Instance.IsReconnecting())
+        {
+            Debug.Log("[MOBConnectionUI] Disconnected but auto-reconnect in progress");
+            return;
+        }
+
         Debug.Log("[MOBConnectionUI] Disconnected!");
         AddDebugLog("✗ Disconnected");
-        SetStatus("Disconnected! Check IP/Port.", Color.red);
+        SetStatus("Disconnected! Reconnection failed.", Color.red);
 
         isConnecting = false;
         connectionTimer = 0f;
+        wasReconnecting = false;
 
         ShowConnectionPanel();
+
+        if (connectionMockPanel != null)
+            connectionMockPanel.SetActive(true);
     }
 
     private void ShowConnectionPanel()
@@ -399,6 +474,9 @@ public class MOBConnectionUI : MonoBehaviour
     {
         if (connectionPanel != null)
             connectionPanel.SetActive(false);
+
+        if (connectionMockPanel != null)
+            connectionMockPanel.SetActive(false);
 
         if (controllerPanel != null)
             controllerPanel.SetActive(true);
