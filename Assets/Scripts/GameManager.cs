@@ -10,6 +10,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] TMP_InputField nameInput;
     [SerializeField] GameObject messagePanel;
     [SerializeField] GameObject keyboard;
+    [SerializeField] GameObject blckScreen;
     [SerializeField] TMP_InputField keyboardInput;
     public RawImage avatarImg;
     [SerializeField] RTLTextMeshPro messageTxt;
@@ -204,6 +205,7 @@ public class GameManager : MonoBehaviour
         TransitionToPanel(() =>
         {
             lobbyPanel.SetActive(false);
+            blckScreen.SetActive(true);
             rolsPanel.SetActive(true);
         }, rolsPanel);
     }
