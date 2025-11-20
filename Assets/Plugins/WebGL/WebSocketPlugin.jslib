@@ -1,6 +1,7 @@
 var WebSocketPlugin = {
     $webSocketInstances: {},
     $webSocketNextId: 0,
+    $pageVisibilityHandler: null,
 
     WebSocketConnect: function(urlPtr) {
         var url = UTF8ToString(urlPtr);
@@ -15,15 +16,29 @@ var WebSocketPlugin = {
             webSocketInstances[id] = {
                 socket: socket,
                 messages: [],
-                state: 0 // CONNECTING
+                state: 0, // CONNECTING
+                url: url, // Store URL for reconnection
+                lastActivity: Date.now()
             };
             
             socket.onopen = function() {
                 console.log('[WebSocket] Connection opened: ' + url);
-                webSocketInstances[id].state = 1; // OPEN
+                // FIX: Check if instance still exists
+                if (webSocketInstances[id]) {
+                    webSocketInstances[id].state = 1; // OPEN
+                    webSocketInstances[id].lastActivity = Date.now();
+                }
             };
             
             socket.onmessage = function(event) {
+                // FIX: Check if instance still exists
+                if (!webSocketInstances[id]) {
+                    console.warn('[WebSocket] Message received but instance ' + id + ' no longer exists');
+                    return;
+                }
+                
+                webSocketInstances[id].lastActivity = Date.now();
+                
                 console.log('[WebSocket] Message received, type:', typeof event.data);
                 var data;
                 
@@ -43,13 +58,51 @@ var WebSocketPlugin = {
             
             socket.onerror = function(error) {
                 console.error('[WebSocket] Error:', error);
-                webSocketInstances[id].state = 3; // CLOSED
+                // FIX: Check if instance still exists
+                if (webSocketInstances[id]) {
+                    webSocketInstances[id].state = 3; // CLOSED
+                }
             };
             
             socket.onclose = function(event) {
                 console.log('[WebSocket] Closed. Code:', event.code, 'Reason:', event.reason);
-                webSocketInstances[id].state = 3; // CLOSED
+                // FIX: Check if instance still exists before setting state
+                if (webSocketInstances[id]) {
+                    webSocketInstances[id].state = 3; // CLOSED
+                } else {
+                    console.warn('[WebSocket] Close event for already deleted instance:', id);
+                }
             };
+            
+            // CRITICAL: Add Page Visibility API handler (only once)
+            if (!pageVisibilityHandler) {
+                pageVisibilityHandler = function() {
+                    if (document.hidden) {
+                        console.log('[WebSocket] Page hidden - connections may suspend');
+                    } else {
+                        console.log('[WebSocket] Page visible - checking connections');
+                        // Check all connections when page becomes visible
+                        for (var socketId in webSocketInstances) {
+                            var instance = webSocketInstances[socketId];
+                            if (instance.socket && instance.socket.readyState !== 1) {
+                                console.warn('[WebSocket] Connection ' + socketId + ' not open after resume, state:', instance.socket.readyState);
+                            }
+                        }
+                    }
+                };
+                
+                document.addEventListener('visibilitychange', pageVisibilityHandler);
+                console.log('[WebSocket] Visibility change handler registered');
+                
+                // Also handle pagehide/pageshow for iOS Safari
+                window.addEventListener('pagehide', function() {
+                    console.log('[WebSocket] Page hiding');
+                });
+                
+                window.addEventListener('pageshow', function(e) {
+                    console.log('[WebSocket] Page showing, persisted:', e.persisted);
+                });
+            }
             
             return id;
         } catch (e) {
@@ -80,6 +133,11 @@ var WebSocketPlugin = {
                 var arrayCopy = new Uint8Array(buffer); // Create a copy
                 socket.send(arrayCopy);
                 console.log('[WebSocket] Sent', length, 'bytes');
+                
+                // Update last activity
+                if (webSocketInstances[socketId]) {
+                    webSocketInstances[socketId].lastActivity = Date.now();
+                }
             } catch (e) {
                 console.error('[WebSocket] Send error:', e);
             }
@@ -100,6 +158,11 @@ var WebSocketPlugin = {
         if (socket && socket.readyState === 1) {
             socket.send(message);
             console.log('[WebSocket] Sent text:', message.substring(0, 50));
+            
+            // Update last activity
+            if (webSocketInstances[socketId]) {
+                webSocketInstances[socketId].lastActivity = Date.now();
+            }
         }
     },
 
@@ -125,20 +188,39 @@ var WebSocketPlugin = {
 
     WebSocketClose: function(socketId) {
         if (!webSocketInstances[socketId]) {
+            console.warn('[WebSocket] Close: Instance ' + socketId + ' already deleted');
             return;
         }
         
-        var socket = webSocketInstances[socketId].socket;
+        var instance = webSocketInstances[socketId];
+        var socket = instance.socket;
         
         if (socket) {
             console.log('[WebSocket] Closing socket:', socketId);
-            socket.close();
+            
+            // CRITICAL FIX: Remove event handlers to prevent callbacks after deletion
+            socket.onopen = null;
+            socket.onmessage = null;
+            socket.onerror = null;
+            socket.onclose = null;
+            
+            // Close the socket
+            if (socket.readyState === 0 || socket.readyState === 1) { // CONNECTING or OPEN
+                try {
+                    socket.close();
+                } catch (e) {
+                    console.warn('[WebSocket] Error closing socket:', e);
+                }
+            }
         }
         
+        // Delete the instance
         delete webSocketInstances[socketId];
+        console.log('[WebSocket] Instance ' + socketId + ' deleted');
     }
 };
 
 autoAddDeps(WebSocketPlugin, '$webSocketInstances');
 autoAddDeps(WebSocketPlugin, '$webSocketNextId');
+autoAddDeps(WebSocketPlugin, '$pageVisibilityHandler');
 mergeInto(LibraryManager.library, WebSocketPlugin);

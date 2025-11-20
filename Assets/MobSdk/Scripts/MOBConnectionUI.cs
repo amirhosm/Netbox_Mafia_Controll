@@ -18,6 +18,11 @@ public class MOBConnectionUI : MonoBehaviour
     public GameObject connectionMockPanel;
     public GameObject controllerPanel;
 
+    [Header("Reconnection UI")]
+    public GameObject reconnectingPanel; // NEW: Panel showing "Connecting..." message
+    public TextMeshProUGUI reconnectingText; // NEW: Text showing reconnection status
+    public Slider reconnectingProgressBar; // NEW: Optional progress bar
+
     [Header("Deep Link Settings")]
     public bool enableDeepLink = true;
     public string deepLinkParameterName = "connect";
@@ -35,6 +40,8 @@ public class MOBConnectionUI : MonoBehaviour
         {
             MOBConnectionManager.Instance.OnTVConnected += OnConnected;
             MOBConnectionManager.Instance.OnTVFucked += OnDisconnected;
+            MOBConnectionManager.Instance.OnReconnecting += OnReconnecting; // NEW
+            MOBConnectionManager.Instance.OnReconnectionFailed += OnReconnectionFailed; // NEW
         }
         else
         {
@@ -45,6 +52,12 @@ public class MOBConnectionUI : MonoBehaviour
         if (connectButton != null)
         {
             connectButton.onClick.AddListener(OnConnectButtonClicked);
+        }
+
+        // Hide reconnecting panel initially
+        if (reconnectingPanel != null)
+        {
+            reconnectingPanel.SetActive(false);
         }
 
         ShowConnectionPanel();
@@ -74,15 +87,18 @@ public class MOBConnectionUI : MonoBehaviour
             if (!wasReconnecting)
             {
                 wasReconnecting = true;
-                SetStatus("Connection lost - Reconnecting...", Color.yellow);
-                AddDebugLog("Auto-reconnecting...");
+                ShowReconnectingPanel();
             }
+
+            // Update reconnection progress
+            UpdateReconnectingProgress();
             return;
         }
         else if (wasReconnecting)
         {
-            // Reconnection completed
+            // Reconnection completed (either success or failure)
             wasReconnecting = false;
+            HideReconnectingPanel();
         }
 
         // Connection timeout detection (only for initial connection)
@@ -98,6 +114,86 @@ public class MOBConnectionUI : MonoBehaviour
                 isConnecting = false;
                 connectionTimer = 0f;
             }
+        }
+    }
+
+    // NEW: Show reconnecting panel with status message
+    private void ShowReconnectingPanel()
+    {
+        Debug.Log("[MOBConnectionUI] Showing reconnecting panel");
+
+        if (reconnectingPanel != null)
+        {
+            reconnectingPanel.SetActive(true);
+        }
+
+        if (reconnectingText != null)
+        {
+            reconnectingText.text = "Connection lost...\nReconnecting...";
+        }
+
+        // Don't hide controller panel - show reconnecting overlay on top
+        // This way the player can see their game state during reconnection
+    }
+
+    // NEW: Hide reconnecting panel
+    private void HideReconnectingPanel()
+    {
+        Debug.Log("[MOBConnectionUI] Hiding reconnecting panel");
+
+        if (reconnectingPanel != null)
+        {
+            reconnectingPanel.SetActive(false);
+        }
+    }
+
+    // NEW: Update reconnection progress display
+    private void UpdateReconnectingProgress()
+    {
+        if (MOBConnectionManager.Instance == null) return;
+
+        float progress = MOBConnectionManager.Instance.GetReconnectionProgress();
+
+        if (reconnectingProgressBar != null)
+        {
+            reconnectingProgressBar.value = progress;
+        }
+
+        if (reconnectingText != null)
+        {
+            int percentage = Mathf.RoundToInt(progress * 100f);
+            reconnectingText.text = $"Connection lost...\nReconnecting... {percentage}%";
+        }
+    }
+
+    // NEW: Called when reconnection starts
+    private void OnReconnecting()
+    {
+        Debug.Log("[MOBConnectionUI] Reconnection started");
+        AddDebugLog("Reconnection started...");
+
+        // Show reconnecting status (will be handled in Update)
+        wasReconnecting = true;
+    }
+
+    // NEW: Called when reconnection fails completely
+    private void OnReconnectionFailed()
+    {
+        Debug.Log("[MOBConnectionUI] Reconnection failed");
+        AddDebugLog("Reconnection failed");
+
+        HideReconnectingPanel();
+        ShowConnectionPanel();
+
+        SetStatus("Connection lost! Tap to reconnect.", Color.red);
+
+        if (connectionMockPanel != null)
+            connectionMockPanel.SetActive(true);
+
+        // Keep the last connection string so user can easily reconnect
+        if (connectionInput != null && !string.IsNullOrEmpty(lastConnectionString))
+        {
+            connectionInput.text = lastConnectionString;
         }
     }
 
@@ -418,9 +514,15 @@ public class MOBConnectionUI : MonoBehaviour
         Debug.Log("[MOBConnectionUI] Reconnect button clicked");
         AddDebugLog("Reconnecting...");
 
-        // Don't reset the static variables - they will persist across scene reload
-        // Just reload the scene and the Start() method will use the stored connection string
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        // Try to reconnect with stored connection string
+        if (!string.IsNullOrEmpty(lastConnectionString))
+        {
+            AttemptConnection(lastConnectionString);
+        }
+        else
+        {
+            SetStatus("No connection data available", Color.red);
+        }
     }
 
     private void OnConnected()
@@ -433,12 +535,14 @@ public class MOBConnectionUI : MonoBehaviour
         connectionTimer = 0f;
         wasReconnecting = false;
 
+        HideReconnectingPanel();
         Invoke(nameof(ShowControllerPanel), 1f);
     }
 
     private void OnDisconnected()
     {
         // Only show disconnection UI if not currently reconnecting
+        // (Reconnection will be handled by OnReconnecting and OnReconnectionFailed)
         if (MOBConnectionManager.Instance != null && MOBConnectionManager.Instance.IsReconnecting())
         {
             Debug.Log("[MOBConnectionUI] Disconnected but auto-reconnect in progress");
@@ -447,12 +551,13 @@ public class MOBConnectionUI : MonoBehaviour
 
         Debug.Log("[MOBConnectionUI] Disconnected!");
         AddDebugLog("✗ Disconnected");
-        SetStatus("Disconnected! Reconnection failed.", Color.red);
+        SetStatus("Disconnected!", Color.red);
 
         isConnecting = false;
         connectionTimer = 0f;
         wasReconnecting = false;
 
+        HideReconnectingPanel();
         ShowConnectionPanel();
 
         if (connectionMockPanel != null)
@@ -516,6 +621,8 @@ public class MOBConnectionUI : MonoBehaviour
         {
             MOBConnectionManager.Instance.OnTVConnected -= OnConnected;
             MOBConnectionManager.Instance.OnTVFucked -= OnDisconnected;
+            MOBConnectionManager.Instance.OnReconnecting -= OnReconnecting;
+            MOBConnectionManager.Instance.OnReconnectionFailed -= OnReconnectionFailed;
         }
 
         if (connectButton != null)

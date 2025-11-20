@@ -6,6 +6,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
+
 #if !UNITY_WEBGL || UNITY_EDITOR
 using WebSocketSharp;
 #endif
@@ -16,14 +17,15 @@ public class MOBConnectionManager : MonoBehaviour
 
     [Header("Connection Settings")]
     public string serverIP = "192.168.1.100";
-    public int tcpPort = 7777; // For mobile native builds
-    public int wsPort = 7778; // For WebGL
+    public int tcpPort = 7777;
+    public int wsPort = 7778;
     public string wsPath = "/mobile";
 
     [Header("Auto-Reconnect Settings")]
-    public int maxReconnectAttempts = 5;
-    public float reconnectInterval = 2f; // Seconds between reconnect attempts
-    public float reconnectTimeout = 10f; // Total time before giving up
+    public int maxReconnectAttempts = 5; // REDUCED from 10
+    public float reconnectInterval = 3f; // INCREASED from 2f
+    public float reconnectTimeout = 15f; // REDUCED from 20f
+    public float pingInterval = 5f; // INCREASED from 3f - reduce ping frequency
 
     private TcpClient tcpClient;
     private NetworkStream tcpStream;
@@ -32,12 +34,14 @@ public class MOBConnectionManager : MonoBehaviour
     private WebSocket wsClient;
 #else
     private int webSocketId = -1;
+    private int previousWebSocketId = -1; // Track previous socket for cleanup
     private Queue<byte[]> messageQueue = new Queue<byte[]>();
 #endif
 
     private Thread receiveThread;
     public bool isConnected = false;
     public string myPlayerId = "";
+    private string savedPlayerId = "";
     private bool isRunning = false;
     private bool isWebGL = false;
 
@@ -47,9 +51,21 @@ public class MOBConnectionManager : MonoBehaviour
     private float reconnectTimer = 0f;
     private float totalReconnectTime = 0f;
     private int lastKnownState = -1;
+    private float pingTimer = 0f;
+
+    // Connection persistence
+    private string lastServerIP = "";
+    private int lastServerPort = 0;
+
+    // NEW: Prevent multiple simultaneous reconnection attempts
+    private bool reconnectInProgress = false;
+    private float timeSinceLastStateChange = 0f;
+    private const float MIN_STATE_CHANGE_INTERVAL = 1f; // Minimum 1 second between state changes
 
     public event Action OnTVConnected;
     public event Action OnTVFucked;
+    public event Action OnReconnecting;
+    public event Action OnReconnectionFailed;
     public event Action<string> OnTVGotString;
     public event Action<string, byte[]> OnTVGotNude;
     public event Action<string, byte[], string> OnGotAvatar;
@@ -73,6 +89,9 @@ public class MOBConnectionManager : MonoBehaviour
     
     [DllImport("__Internal")]
     private static extern int WebSocketReceive(int socketId, byte[] buffer, int bufferSize);
+
+    [DllImport("__Internal")]
+    private static extern void WebSocketSetVisibilityCallback(Action<bool> callback);
 #endif
 
     private void Awake()
@@ -91,15 +110,78 @@ public class MOBConnectionManager : MonoBehaviour
 #if UNITY_WEBGL && !UNITY_EDITOR
         isWebGL = true;
         Debug.Log("Running in WebGL mode");
+        // Register visibility change callback
+        Application.focusChanged += OnApplicationFocusChanged;
 #else
         isWebGL = Application.platform == RuntimePlatform.WebGLPlayer;
         Debug.Log($"Running in {Application.platform} mode");
 #endif
+
+        LoadSavedPlayerId();
+    }
+
+    private void LoadSavedPlayerId()
+    {
+        if (PlayerPrefs.HasKey("SavedPlayerID"))
+        {
+            savedPlayerId = PlayerPrefs.GetString("SavedPlayerID");
+            Debug.Log($"[MOBConnectionManager] Loaded saved Player ID: {savedPlayerId}");
+        }
+    }
+#if UNITY_WEBGL && !UNITY_EDITOR
+    private void OnApplicationFocusChanged(bool hasFocus)
+    {
+        Debug.Log($"[MOBConnectionManager] App focus changed: {hasFocus}");
+
+        if (!hasFocus)
+        {
+            // App lost focus - connection may suspend
+            Debug.LogWarning("[MOBConnectionManager] App backgrounded - connection may be suspended");
+        }
+        else
+        {
+            // App regained focus - check connection
+            Debug.Log("[MOBConnectionManager] App foregrounded - checking connection");
+
+            if (isConnected && webSocketId >= 0)
+            {
+                int state = WebSocketGetState(webSocketId);
+                if (state != 1) // Not OPEN
+                {
+                    Debug.LogWarning($"[MOBConnectionManager] Connection not open after resume (state: {state}) - reconnecting");
+                    isConnected = false;
+                    AttemptReconnect();
+                }
+                else
+                {
+                    // Send ping to verify connection is alive
+                    SendToTV("PING");
+                }
+            }
+        }
+    }
+#endif
+    private void SavePlayerId(string playerId)
+    {
+        savedPlayerId = playerId;
+        myPlayerId = playerId;
+        PlayerPrefs.SetString("SavedPlayerID", playerId);
+        PlayerPrefs.Save();
+        Debug.Log($"[MOBConnectionManager] Saved Player ID: {playerId}");
     }
 
     public void ConnectToTV(string ip, int port)
     {
+        // Prevent connection attempts while already connecting/reconnecting
+        if (reconnectInProgress)
+        {
+            Debug.LogWarning("[MOBConnectionManager] Connection attempt ignored - reconnection already in progress");
+            return;
+        }
+
         serverIP = ip;
+        lastServerIP = ip;
+        lastServerPort = port;
 
         Debug.Log($"ConnectToTV called with IP: {ip}, Port: {port}, IsWebGL: {isWebGL}");
 
@@ -131,7 +213,6 @@ public class MOBConnectionManager : MonoBehaviour
             isConnected = true;
             isRunning = true;
 
-            // Reset reconnection state on successful connection
             ResetReconnectionState();
 
             receiveThread = new Thread(ReceiveTcpMessages);
@@ -139,6 +220,12 @@ public class MOBConnectionManager : MonoBehaviour
             receiveThread.Start();
 
             Debug.Log($"✓ TCP Connected to TV at {serverIP}:{tcpPort}");
+
+            if (!string.IsNullOrEmpty(savedPlayerId))
+            {
+                SendToTV($"RECONNECT:{savedPlayerId}");
+                Debug.Log($"Sent reconnection request with ID: {savedPlayerId}");
+            }
 
             if (UnityMainThreadDispatcher.Instance != null)
             {
@@ -152,7 +239,7 @@ public class MOBConnectionManager : MonoBehaviour
 
             if (UnityMainThreadDispatcher.Instance != null)
             {
-                UnityMainThreadDispatcher.Instance.Enqueue(() => OnTVFucked?.Invoke());
+                UnityMainThreadDispatcher.Instance.Enqueue(() => AttemptReconnect());
             }
         }
     }
@@ -162,15 +249,33 @@ public class MOBConnectionManager : MonoBehaviour
 #if UNITY_WEBGL && !UNITY_EDITOR
         try
         {
+            // CRITICAL FIX: Close previous websocket before creating new one
+            if (webSocketId >= 0)
+            {
+                Debug.Log($"[MOBConnectionManager] Closing previous WebSocket ID {webSocketId} before creating new one");
+                try
+                {
+                    WebSocketClose(webSocketId);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Error closing previous WebSocket: {e.Message}");
+                }
+                previousWebSocketId = webSocketId;
+                webSocketId = -1;
+            }
+
             string url = $"ws://{serverIP}:{wsPort}{wsPath}";
             Debug.Log($"Attempting WebGL WebSocket connection to: {url}");
             
-            webSocketId = WebSocketConnect(url);
+            int newSocketId = WebSocketConnect(url);
             
-            if (webSocketId >= 0)
+            if (newSocketId >= 0)
             {
+                webSocketId = newSocketId;
                 isRunning = true;
                 lastKnownState = 0; // CONNECTING
+                timeSinceLastStateChange = 0f;
                 Debug.Log($"✓ WebSocket connection initiated with ID: {webSocketId}");
             }
             else
@@ -178,10 +283,9 @@ public class MOBConnectionManager : MonoBehaviour
                 Debug.LogError($"✗ WebSocket Connect failed: Invalid socket ID");
                 isConnected = false;
                 
-                // Don't call OnTVFucked immediately, let reconnection logic handle it
-                if (!isReconnecting)
+                if (!isReconnecting && !reconnectInProgress)
                 {
-                    OnTVFucked?.Invoke();
+                    AttemptReconnect();
                 }
             }
         }
@@ -190,9 +294,9 @@ public class MOBConnectionManager : MonoBehaviour
             Debug.LogError($"✗ WebSocket Connect failed: {e.Message}\n{e.StackTrace}");
             isConnected = false;
             
-            if (!isReconnecting)
+            if (!isReconnecting && !reconnectInProgress)
             {
-                OnTVFucked?.Invoke();
+                AttemptReconnect();
             }
         }
 #else
@@ -208,10 +312,15 @@ public class MOBConnectionManager : MonoBehaviour
                 isConnected = true;
                 isRunning = true;
 
-                // Reset reconnection state on successful connection
                 ResetReconnectionState();
 
                 Debug.Log($"✓ WebSocket Connected to TV at {url}");
+
+                if (!string.IsNullOrEmpty(savedPlayerId))
+                {
+                    SendToTV($"RECONNECT:{savedPlayerId}");
+                    Debug.Log($"Sent reconnection request with ID: {savedPlayerId}");
+                }
 
                 if (UnityMainThreadDispatcher.Instance != null)
                 {
@@ -257,9 +366,9 @@ public class MOBConnectionManager : MonoBehaviour
             Debug.LogError($"✗ WebSocket Connect failed: {e.Message}\n{e.StackTrace}");
             isConnected = false;
 
-            if (!isReconnecting)
+            if (!isReconnecting && !reconnectInProgress)
             {
-                OnTVFucked?.Invoke();
+                AttemptReconnect();
             }
         }
 #endif
@@ -268,10 +377,17 @@ public class MOBConnectionManager : MonoBehaviour
 #if UNITY_WEBGL && !UNITY_EDITOR
     private void Update()
     {
-        // Periodic PING to keep connection alive
-        if (isConnected && Time.frameCount % 120 == 0) // Every 2 seconds at 60fps
+        timeSinceLastStateChange += Time.deltaTime;
+
+        // Periodic PING to keep connection alive (only when stable and connected)
+        if (isConnected && !isReconnecting && !reconnectInProgress)
         {
-            SendToTV("PING");
+            pingTimer += Time.deltaTime;
+            if (pingTimer >= pingInterval)
+            {
+                pingTimer = 0f;
+                SendToTV("PING");
+            }
         }
 
         // Handle reconnection logic
@@ -280,7 +396,6 @@ public class MOBConnectionManager : MonoBehaviour
             reconnectTimer += Time.deltaTime;
             totalReconnectTime += Time.deltaTime;
 
-            // Check if total reconnect time exceeded
             if (totalReconnectTime >= reconnectTimeout)
             {
                 Debug.LogError($"Reconnection timeout after {reconnectTimeout} seconds");
@@ -288,7 +403,6 @@ public class MOBConnectionManager : MonoBehaviour
                 return;
             }
 
-            // Attempt reconnection at intervals
             if (reconnectTimer >= reconnectInterval)
             {
                 reconnectTimer = 0f;
@@ -304,12 +418,15 @@ public class MOBConnectionManager : MonoBehaviour
                 }
 
                 // Try to reconnect
+                reconnectInProgress = true;
                 ConnectWebSocket();
+                reconnectInProgress = false;
             }
 
             return; // Skip normal update logic during reconnection
         }
 
+        // Normal state monitoring (only when NOT reconnecting)
         if (isWebGL && isRunning && webSocketId >= 0)
         {
             int state = WebSocketGetState(webSocketId);
@@ -317,35 +434,57 @@ public class MOBConnectionManager : MonoBehaviour
             // State: 0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED
             if (state == 1 && !isConnected)
             {
+                // CRITICAL: Only transition to connected if enough time has passed
+                if (timeSinceLastStateChange < MIN_STATE_CHANGE_INTERVAL)
+                {
+                    Debug.Log($"[MOBConnectionManager] State change to OPEN too soon ({timeSinceLastStateChange:F2}s), waiting...");
+                    return;
+                }
+
                 isConnected = true;
                 lastKnownState = 1;
+                timeSinceLastStateChange = 0f;
                 
-                // Reset reconnection state on successful connection
                 ResetReconnectionState();
                 
                 Debug.Log("✓ WebGL WebSocket opened");
+
+                if (!string.IsNullOrEmpty(savedPlayerId))
+                {
+                    SendToTV($"RECONNECT:{savedPlayerId}");
+                    Debug.Log($"Sent reconnection request with ID: {savedPlayerId}");
+                }
+
                 OnTVConnected?.Invoke();
             }
             else if (state == 3 && lastKnownState == 1)
             {
-                // Connection was open but now closed - attempt reconnection
+                // CRITICAL: Prevent rapid reconnection loops
+                if (timeSinceLastStateChange < MIN_STATE_CHANGE_INTERVAL)
+                {
+                    Debug.LogWarning($"[MOBConnectionManager] WebSocket closed too soon after opening ({timeSinceLastStateChange:F2}s) - possible network instability");
+                }
+
                 Debug.LogWarning("WebSocket state changed from OPEN to CLOSED - attempting reconnection");
                 lastKnownState = state;
                 isConnected = false;
+                timeSinceLastStateChange = 0f;
                 AttemptReconnect();
             }
             else if (state == 2 && lastKnownState == 1)
             {
-                // Connection is closing
                 Debug.LogWarning("WebSocket is closing");
                 lastKnownState = state;
+                timeSinceLastStateChange = 0f;
             }
-            else
+            else if (state != lastKnownState)
             {
+                Debug.Log($"[MOBConnectionManager] WebSocket state: {lastKnownState} → {state}");
                 lastKnownState = state;
+                timeSinceLastStateChange = 0f;
             }
 
-            // Receive messages (only if connected)
+            // Receive messages (only if connected and state is OPEN)
             if (isConnected && state == 1)
             {
                 byte[] buffer = new byte[1024 * 1024];
@@ -354,9 +493,22 @@ public class MOBConnectionManager : MonoBehaviour
                 if (bytesRead > 0)
                 {
                     string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    Debug.Log($"WebGL received: {message.Substring(0, Math.Min(100, message.Length))}...");
                     ProcessMessage(message);
                 }
+            }
+        }
+    }
+#else
+    private void Update()
+    {
+        // Periodic PING to keep connection alive (for editor/non-WebGL)
+        if (isConnected && !isReconnecting && !isWebGL)
+        {
+            pingTimer += Time.deltaTime;
+            if (pingTimer >= pingInterval)
+            {
+                pingTimer = 0f;
+                SendToTV("PING");
             }
         }
     }
@@ -364,25 +516,29 @@ public class MOBConnectionManager : MonoBehaviour
 
     private void AttemptReconnect()
     {
-        if (isReconnecting)
+        if (isReconnecting || reconnectInProgress)
         {
-            Debug.Log("Already attempting to reconnect");
+            Debug.Log("[MOBConnectionManager] Already attempting to reconnect - ignoring duplicate call");
             return;
         }
 
-        Debug.Log("Starting automatic reconnection...");
+        Debug.Log("[MOBConnectionManager] Starting automatic reconnection...");
         isReconnecting = true;
+        reconnectInProgress = true;
         reconnectAttempts = 0;
         reconnectTimer = 0f;
         totalReconnectTime = 0f;
         isConnected = false;
 
-        // Close current connection if any
+        OnReconnecting?.Invoke();
+
+        // Close current connection
 #if UNITY_WEBGL && !UNITY_EDITOR
         if (webSocketId >= 0)
         {
             try
             {
+                Debug.Log($"[MOBConnectionManager] Closing WebSocket {webSocketId} for reconnection");
                 WebSocketClose(webSocketId);
             }
             catch (Exception e)
@@ -404,12 +560,31 @@ public class MOBConnectionManager : MonoBehaviour
             }
             wsClient = null;
         }
+        else if (!isWebGL && tcpClient != null)
+        {
+            try
+            {
+                tcpStream?.Close();
+                tcpClient?.Close();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Error closing TCP during reconnect: {e.Message}");
+            }
+            tcpClient = null;
+            tcpStream = null;
+        }
 #endif
+
+        // Wait a moment before attempting first reconnection
+        reconnectTimer = reconnectInterval * 0.5f; // Start halfway to first attempt
+        reconnectInProgress = false;
     }
 
     private void ResetReconnectionState()
     {
         isReconnecting = false;
+        reconnectInProgress = false;
         reconnectAttempts = 0;
         reconnectTimer = 0f;
         totalReconnectTime = 0f;
@@ -417,8 +592,9 @@ public class MOBConnectionManager : MonoBehaviour
 
     private void FinalizeDisconnection()
     {
-        Debug.LogError("Reconnection failed - notifying user");
+        Debug.LogError("[MOBConnectionManager] Reconnection failed - notifying user");
         ResetReconnectionState();
+        OnReconnectionFailed?.Invoke();
         Disconnect();
     }
 
@@ -439,15 +615,22 @@ public class MOBConnectionManager : MonoBehaviour
                         UnityMainThreadDispatcher.Instance.Enqueue(() => ProcessMessage(message));
                     }
                 }
+                else
+                {
+                    Debug.Log("TCP connection closed by server");
+                    break;
+                }
             }
         }
         catch (Exception e)
         {
             Debug.LogError($"TCP Receive error: {e.Message}");
-
+        }
+        finally
+        {
             if (UnityMainThreadDispatcher.Instance != null)
             {
-                UnityMainThreadDispatcher.Instance.Enqueue(() => Disconnect());
+                UnityMainThreadDispatcher.Instance.Enqueue(() => AttemptReconnect());
             }
         }
     }
@@ -458,12 +641,35 @@ public class MOBConnectionManager : MonoBehaviour
         {
             if (string.IsNullOrEmpty(message)) return;
 
-            Debug.Log($"Processing: {message.Substring(0, Math.Min(50, message.Length))}...");
+            // Don't log full message to reduce console spam
+            if (message != "PONG" && Time.frameCount % 30 == 0)
+            {
+                Debug.Log($"Processing: {message.Substring(0, Math.Min(50, message.Length))}...");
+            }
 
             if (message.StartsWith("PLAYERID:"))
             {
-                myPlayerId = message.Substring(9).Trim();
+                string newPlayerId = message.Substring(9).Trim();
+                SavePlayerId(newPlayerId);
                 Debug.Log($"✓ Assigned Player ID: {myPlayerId}");
+            }
+            else if (message.StartsWith("RECONNECT_ACCEPTED:"))
+            {
+                string confirmedId = message.Substring(19).Trim();
+                myPlayerId = confirmedId;
+                Debug.Log($"✓ Reconnected with existing ID: {confirmedId}");
+            }
+            else if (message.StartsWith("RECONNECT_REJECTED"))
+            {
+                Debug.LogWarning("Reconnection rejected - clearing saved ID");
+                savedPlayerId = "";
+                PlayerPrefs.DeleteKey("SavedPlayerID");
+                PlayerPrefs.Save();
+            }
+            else if (message == "PONG")
+            {
+                // Heartbeat response - silent
+                return;
             }
             else if (message.StartsWith("STRING:"))
             {
@@ -603,7 +809,11 @@ public class MOBConnectionManager : MonoBehaviour
     {
         if (!isConnected)
         {
-            Debug.LogWarning("Cannot send - not connected");
+            // Only log if not PING to reduce spam
+            if (data.Length < 4 || Encoding.UTF8.GetString(data, 0, Math.Min(4, data.Length)) != "PING")
+            {
+                Debug.LogWarning("Cannot send - not connected");
+            }
             return;
         }
 
@@ -612,8 +822,16 @@ public class MOBConnectionManager : MonoBehaviour
 #if UNITY_WEBGL && !UNITY_EDITOR
             if (webSocketId >= 0)
             {
-                WebSocketSend(webSocketId, data, data.Length);
-                Debug.Log($"WebGL sent: {Encoding.UTF8.GetString(data).Substring(0, Math.Min(50, data.Length))}...");
+                int state = WebSocketGetState(webSocketId);
+                if (state == 1) // Only send if OPEN
+                {
+                    WebSocketSend(webSocketId, data, data.Length);
+                }
+                else
+                {
+                    Debug.LogWarning($"Cannot send - WebSocket state is {state}, not OPEN");
+                    isConnected = false;
+                }
             }
 #else
             if (isWebGL)
@@ -621,7 +839,6 @@ public class MOBConnectionManager : MonoBehaviour
                 if (wsClient != null && wsClient.IsAlive)
                 {
                     wsClient.Send(data);
-                    Debug.Log($"WebSocket sent: {Encoding.UTF8.GetString(data).Substring(0, Math.Min(50, data.Length))}...");
                 }
             }
             else
@@ -630,7 +847,6 @@ public class MOBConnectionManager : MonoBehaviour
                 {
                     tcpStream.Write(data, 0, data.Length);
                     tcpStream.Flush();
-                    Debug.Log($"TCP sent: {Encoding.UTF8.GetString(data).Substring(0, Math.Min(50, data.Length))}...");
                 }
             }
 #endif
@@ -649,6 +865,7 @@ public class MOBConnectionManager : MonoBehaviour
         isConnected = false;
         isRunning = false;
         isReconnecting = false;
+        reconnectInProgress = false;
 
         Debug.Log("Disconnecting...");
 
@@ -690,12 +907,27 @@ public class MOBConnectionManager : MonoBehaviour
     {
         isRunning = false;
         isReconnecting = false;
+        reconnectInProgress = false;
         Disconnect();
     }
 
-    // Public method to check if currently reconnecting
     public bool IsReconnecting()
     {
         return isReconnecting;
+    }
+
+    public float GetReconnectionProgress()
+    {
+        if (!isReconnecting) return 0f;
+        return Mathf.Clamp01(totalReconnectTime / reconnectTimeout);
+    }
+
+    public void ClearSavedPlayerId()
+    {
+        savedPlayerId = "";
+        myPlayerId = "";
+        PlayerPrefs.DeleteKey("SavedPlayerID");
+        PlayerPrefs.Save();
+        Debug.Log("[MOBConnectionManager] Cleared saved Player ID");
     }
 }

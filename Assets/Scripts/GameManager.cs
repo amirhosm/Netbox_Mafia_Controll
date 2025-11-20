@@ -189,6 +189,7 @@ public class GameManager : MonoBehaviour
     public void OnLobbyReadyBtn()
     {
         var eventSystem = EventSystem.current;
+        Screen.fullScreen = true;
         if (!eventSystem.alreadySelecting) eventSystem.SetSelectedGameObject(null);
 
         if (!string.IsNullOrEmpty(nameInput.text))
