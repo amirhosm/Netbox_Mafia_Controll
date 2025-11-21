@@ -81,28 +81,20 @@ public class MOBConnectionUI : MonoBehaviour
 
     private void Update()
     {
-        // Check if ConnectionManager is reconnecting
-        if (MOBConnectionManager.Instance != null && MOBConnectionManager.Instance.IsReconnecting())
+        // Update reconnection progress (only if already reconnecting)
+        if (wasReconnecting && MOBConnectionManager.Instance != null && MOBConnectionManager.Instance.IsReconnecting())
         {
-            if (!wasReconnecting)
-            {
-                wasReconnecting = true;
-                ShowReconnectingPanel();
-            }
-
-            // Update reconnection progress
             UpdateReconnectingProgress();
             return;
         }
-        else if (wasReconnecting)
+        else if (wasReconnecting && MOBConnectionManager.Instance != null && !MOBConnectionManager.Instance.IsReconnecting())
         {
-            // Reconnection completed (either success or failure)
+            // Reconnection completed (either success or failure will be handled by events)
             wasReconnecting = false;
-            HideReconnectingPanel();
         }
 
         // Connection timeout detection (only for initial connection)
-        if (isConnecting && !MOBConnectionManager.Instance.IsReconnecting())
+        if (isConnecting && MOBConnectionManager.Instance != null && !MOBConnectionManager.Instance.IsReconnecting())
         {
             connectionTimer += Time.deltaTime;
 
@@ -120,30 +112,45 @@ public class MOBConnectionUI : MonoBehaviour
     // NEW: Show reconnecting panel with status message
     private void ShowReconnectingPanel()
     {
-        Debug.Log("[MOBConnectionUI] Showing reconnecting panel");
+        Debug.Log("[MOBConnectionUI] ShowReconnectingPanel called");
 
-        if (reconnectingPanel != null)
+        if (reconnectingPanel == null)
         {
-            reconnectingPanel.SetActive(true);
+            Debug.LogError("[MOBConnectionUI] ❌ reconnectingPanel is NULL! Assign it in the Inspector!");
+            AddDebugLog("ERROR: reconnectingPanel not assigned!");
+            return;
         }
+
+        Debug.Log($"[MOBConnectionUI] Activating reconnectingPanel (current state: {reconnectingPanel.activeSelf})");
+        reconnectingPanel.SetActive(true);
 
         if (reconnectingText != null)
         {
             reconnectingText.text = "Connection lost...\nReconnecting...";
+            Debug.Log("[MOBConnectionUI] Updated reconnectingText");
+        }
+        else
+        {
+            Debug.LogWarning("[MOBConnectionUI] reconnectingText is NULL!");
         }
 
-        // Don't hide controller panel - show reconnecting overlay on top
-        // This way the player can see their game state during reconnection
+        Debug.Log("[MOBConnectionUI] ✓ Reconnecting panel should now be visible");
     }
 
     // NEW: Hide reconnecting panel
     private void HideReconnectingPanel()
     {
-        Debug.Log("[MOBConnectionUI] Hiding reconnecting panel");
+        Debug.Log("[MOBConnectionUI] HideReconnectingPanel called");
 
         if (reconnectingPanel != null)
         {
+            Debug.Log($"[MOBConnectionUI] Deactivating reconnectingPanel (current state: {reconnectingPanel.activeSelf})");
             reconnectingPanel.SetActive(false);
+            Debug.Log("[MOBConnectionUI] ✓ Reconnecting panel hidden");
+        }
+        else
+        {
+            Debug.LogWarning("[MOBConnectionUI] reconnectingPanel is NULL in HideReconnectingPanel!");
         }
     }
 
@@ -166,21 +173,25 @@ public class MOBConnectionUI : MonoBehaviour
         }
     }
 
-    // NEW: Called when reconnection starts
+    // ✨ FIXED: Show reconnecting panel immediately when reconnection starts
     private void OnReconnecting()
     {
-        Debug.Log("[MOBConnectionUI] Reconnection started");
+        Debug.Log("[MOBConnectionUI] OnReconnecting called");
         AddDebugLog("Reconnection started...");
 
-        // Show reconnecting status (will be handled in Update)
         wasReconnecting = true;
+        Screen.fullScreen = true;
+        // ✨ NEW: Show reconnecting panel IMMEDIATELY
+        ShowReconnectingPanel();
     }
 
-    // NEW: Called when reconnection fails completely
+    // ✨ FIXED: Hide reconnecting panel when reconnection fails
     private void OnReconnectionFailed()
     {
-        Debug.Log("[MOBConnectionUI] Reconnection failed");
+        Debug.Log("[MOBConnectionUI] OnReconnectionFailed called");
         AddDebugLog("Reconnection failed");
+
+        wasReconnecting = false; // ✨ NEW: Reset flag
 
         HideReconnectingPanel();
         ShowConnectionPanel();
@@ -533,7 +544,7 @@ public class MOBConnectionUI : MonoBehaviour
 
         isConnecting = false;
         connectionTimer = 0f;
-        wasReconnecting = false;
+        wasReconnecting = false; // ✨ NEW: Reset flag on successful connection
 
         HideReconnectingPanel();
         Invoke(nameof(ShowControllerPanel), 1f);

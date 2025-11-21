@@ -323,8 +323,18 @@ namespace WebGLSupport
                 var offset = instance.input.text.Length - value.Length;
 
                 WebGLInputPlugin.WebGLInputText(id, instance.input.text);
+
+                // ADD BOUNDS CHECKING FOR RTL/PERSIAN TEXT
+                var newStart = start + offset;
+                var newEnd = end + offset;
+                var textLength = instance.input.text.Length;
+
+                // Clamp selection values to valid range
+                newStart = Mathf.Max(0, Mathf.Min(newStart, textLength));
+                newEnd = Mathf.Max(0, Mathf.Min(newEnd, textLength));
+
                 // reset the input element selection range!!
-                WebGLInputPlugin.WebGLInputSetSelectionRange(id, start + offset, end + offset);
+                WebGLInputPlugin.WebGLInputSetSelectionRange(id, newStart, newEnd);
             }
 
             // 選択方向によって設定します

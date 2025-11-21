@@ -60,7 +60,7 @@ public class MOBConnectionManager : MonoBehaviour
     // NEW: Prevent multiple simultaneous reconnection attempts
     private bool reconnectInProgress = false;
     private float timeSinceLastStateChange = 0f;
-    private const float MIN_STATE_CHANGE_INTERVAL = 1f; // Minimum 1 second between state changes
+    private const float MIN_STATE_CHANGE_INTERVAL = 0.5f; // Minimum 1 second between state changes
 
     public event Action OnTVConnected;
     public event Action OnTVFucked;
@@ -248,50 +248,39 @@ public class MOBConnectionManager : MonoBehaviour
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
         try
+    {
+        if (webSocketId >= 0)
         {
-            // CRITICAL FIX: Close previous websocket before creating new one
-            if (webSocketId >= 0)
-            {
-                Debug.Log($"[MOBConnectionManager] Closing previous WebSocket ID {webSocketId} before creating new one");
-                try
-                {
-                    WebSocketClose(webSocketId);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogWarning($"Error closing previous WebSocket: {e.Message}");
-                }
-                previousWebSocketId = webSocketId;
-                webSocketId = -1;
-            }
-
-            string url = $"ws://{serverIP}:{wsPort}{wsPath}";
-            Debug.Log($"Attempting WebGL WebSocket connection to: {url}");
-            
-            int newSocketId = WebSocketConnect(url);
-            
-            if (newSocketId >= 0)
-            {
-                webSocketId = newSocketId;
-                isRunning = true;
-                lastKnownState = 0; // CONNECTING
-                timeSinceLastStateChange = 0f;
-                Debug.Log($"✓ WebSocket connection initiated with ID: {webSocketId}");
-            }
-            else
-            {
-                Debug.LogError($"✗ WebSocket Connect failed: Invalid socket ID");
-                isConnected = false;
-                
-                if (!isReconnecting && !reconnectInProgress)
-                {
-                    AttemptReconnect();
-                }
-            }
+            Debug.Log($"[MOBConnectionManager] Closing previous WebSocket ID {webSocketId}");
+            try { WebSocketClose(webSocketId); }
+            catch (Exception e) { Debug.LogWarning($"Error closing previous WebSocket: {e.Message}"); }
+            previousWebSocketId = webSocketId;
+            webSocketId = -1;
         }
-        catch (Exception e)
+
+        // ✨ NEW: Build URL with player ID query parameter if available
+        string url = $"ws://{serverIP}:{wsPort}{wsPath}";
+        if (!string.IsNullOrEmpty(savedPlayerId))
         {
-            Debug.LogError($"✗ WebSocket Connect failed: {e.Message}\n{e.StackTrace}");
+            url += $"?playerId={savedPlayerId}";
+            Debug.Log($"[MOBConnectionManager] Connecting with saved ID in URL: {savedPlayerId}");
+        }
+        
+        Debug.Log($"Attempting WebGL WebSocket connection to: {url}");
+        
+        int newSocketId = WebSocketConnect(url);
+        
+        if (newSocketId >= 0)
+        {
+            webSocketId = newSocketId;
+            isRunning = true;
+            lastKnownState = 0; // CONNECTING
+            timeSinceLastStateChange = 0f;
+            Debug.Log($"✓ WebSocket connection initiated with ID: {webSocketId}");
+        }
+        else
+        {
+            Debug.LogError($"✗ WebSocket Connect failed: Invalid socket ID");
             isConnected = false;
             
             if (!isReconnecting && !reconnectInProgress)
@@ -299,10 +288,28 @@ public class MOBConnectionManager : MonoBehaviour
                 AttemptReconnect();
             }
         }
+    }
+    catch (Exception e)
+    {
+        Debug.LogError($"✗ WebSocket Connect failed: {e.Message}\n{e.StackTrace}");
+        isConnected = false;
+        
+        if (!isReconnecting && !reconnectInProgress)
+        {
+            AttemptReconnect();
+        }
+    }
 #else
         try
         {
+            // ✨ NEW: Build URL with player ID query parameter if available
             string url = $"ws://{serverIP}:{wsPort}{wsPath}";
+            if (!string.IsNullOrEmpty(savedPlayerId))
+            {
+                url += $"?playerId={savedPlayerId}";
+                Debug.Log($"[MOBConnectionManager] Connecting with saved ID in URL: {savedPlayerId}");
+            }
+
             Debug.Log($"Attempting Editor WebSocket connection to: {url}");
 
             wsClient = new WebSocket(url);
@@ -311,16 +318,11 @@ public class MOBConnectionManager : MonoBehaviour
             {
                 isConnected = true;
                 isRunning = true;
-
                 ResetReconnectionState();
 
                 Debug.Log($"✓ WebSocket Connected to TV at {url}");
 
-                if (!string.IsNullOrEmpty(savedPlayerId))
-                {
-                    SendToTV($"RECONNECT:{savedPlayerId}");
-                    Debug.Log($"Sent reconnection request with ID: {savedPlayerId}");
-                }
+                // NOTE: No need to send RECONNECT message - TV already handled it in OnOpen!
 
                 if (UnityMainThreadDispatcher.Instance != null)
                 {
@@ -379,6 +381,22 @@ public class MOBConnectionManager : MonoBehaviour
     {
         timeSinceLastStateChange += Time.deltaTime;
 
+        // ✨ CRITICAL FIX: Check WebSocket state FIRST, before reconnection logic
+        if (isWebGL && isRunning && webSocketId >= 0)
+        {
+            int state = WebSocketGetState(webSocketId);
+
+            // ✨ CRITICAL: If socket is OPEN but we're reconnecting, STOP reconnecting immediately!
+            if (state == 1 && isReconnecting)
+            {
+                Debug.Log($"[MOBConnectionManager] WebSocket opened during reconnection - stopping reconnection loop!");
+                ResetReconnectionState();
+                
+                // Don't set isConnected yet if MIN_STATE_CHANGE_INTERVAL hasn't passed
+                // This will be handled below
+            }
+        }
+
         // Periodic PING to keep connection alive (only when stable and connected)
         if (isConnected && !isReconnecting && !reconnectInProgress)
         {
@@ -423,7 +441,8 @@ public class MOBConnectionManager : MonoBehaviour
                 reconnectInProgress = false;
             }
 
-            return; // Skip normal update logic during reconnection
+            // ✨ CRITICAL: Don't continue to normal update logic if still reconnecting
+            return;
         }
 
         // Normal state monitoring (only when NOT reconnecting)
@@ -445,15 +464,7 @@ public class MOBConnectionManager : MonoBehaviour
                 lastKnownState = 1;
                 timeSinceLastStateChange = 0f;
                 
-                ResetReconnectionState();
-                
-                Debug.Log("✓ WebGL WebSocket opened");
-
-                if (!string.IsNullOrEmpty(savedPlayerId))
-                {
-                    SendToTV($"RECONNECT:{savedPlayerId}");
-                    Debug.Log($"Sent reconnection request with ID: {savedPlayerId}");
-                }
+                Debug.Log("✓ WebGL WebSocket opened - connection established!");
 
                 OnTVConnected?.Invoke();
             }
