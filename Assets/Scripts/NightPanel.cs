@@ -75,9 +75,9 @@ public class NightPanel : MonoBehaviour
             {
                 if (t.GetComponent<PlayerItem>().id == selectedID)
                 {
-                    gameManager.ShowMessage((t.GetComponent<PlayerItem>().roleAction == "Godfather" || t.GetComponent<PlayerItem>().team == "White") ? "شهروند" : "مافیا");
+                    if (nightNum > 1)
+                        gameManager.ShowMessage((t.GetComponent<PlayerItem>().roleAction == "Godfather" || t.GetComponent<PlayerItem>().team == "White") ? "شهروند" : "مافیا");
                 }
-                Destroy(t.gameObject);
             }
             gameManager.SendStringToTV("NightAct:Spy:" + selectedID);
         }
@@ -88,55 +88,35 @@ public class NightPanel : MonoBehaviour
                 if (t.GetComponent<PlayerItem>().roleAction == "Godfather")
                 {
                     Debug.Log("Send To Godfather >" + "NightMafiaKill:" + selectedID);
-                    gameManager.SendMessageTo(t.GetComponent<PlayerItem>().id, "NightMafiaKill:" + selectedID);
+                    if (nightNum > 1)
+                        gameManager.SendMessageTo(t.GetComponent<PlayerItem>().id, "NightMafiaKill:" + selectedID);
                 }
-                Destroy(t.gameObject);
             }
             gameManager.SendStringToTV("NightAct:Mafia:" + selectedID);
         }
         else if (myAct == "Godfather")
         {
-            foreach (Transform t in listParent)
-            {
-                if (t.GetComponent<PlayerItem>().id == selectedID)
-                {
-                    //send to tv to kill by godfather
-                    gameManager.SendStringToTV("NightAct:Godfather:" + selectedID);
-                }
-                Destroy(t.gameObject);
-            }
+            //send to tv to kill by godfather
+            gameManager.SendStringToTV("NightAct:Godfather:" + selectedID);
         }
         else if (myAct == "Citizen")
         {
-            foreach (Transform t in listParent)
-            {
-                Destroy(t.gameObject);
-            }
             gameManager.SendStringToTV("NightAct:Citizen:" + selectedID);
         }
         else if (myAct == "Dr")
         {
-            foreach (Transform t in listParent)
-            {
-                if (t.GetComponent<PlayerItem>().id == selectedID)
-                {
-                    //send to tv to save
-                    gameManager.SendStringToTV("NightAct:Dr:" + selectedID);
-                }
-                Destroy(t.gameObject);
-            }
+            //send to tv to save
+            gameManager.SendStringToTV("NightAct:Dr:" + selectedID);
         }
         else if (myAct == "Sniper")
         {
-            foreach (Transform t in listParent)
-            {
-                if (t.GetComponent<PlayerItem>().id == selectedID)
-                {
-                    //send to tv to kill by Sniper
-                    gameManager.SendStringToTV("NightAct:Sniper:" + selectedID);
-                }
-                Destroy(t.gameObject);
-            }
+            //send to tv to kill by Sniper
+            gameManager.SendStringToTV("NightAct:Sniper:" + selectedID);
+        }
+
+        foreach (Transform t in listParent)
+        {
+            Destroy(t.gameObject);
         }
 
         conformBtn.SetActive(false);

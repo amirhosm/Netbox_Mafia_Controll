@@ -46,7 +46,7 @@ public class PlayerItem : MonoBehaviour
     public string GetActText()
     {
         string act = "";
-        if (roleAction == "Citizen") act = "الکی انتخاب کن!";
+        if (roleAction == "Citizen") act = "به نظرت کیا مافیان؟";
         else if (roleAction == "Dr") act = "یک نفر را نجات بده";
         else if (roleAction == "Spy") act = "نقش یک نفر را ببین";
         else if (roleAction == "Sniper") act = "به یک نفر شلیک کن";
