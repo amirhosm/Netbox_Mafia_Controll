@@ -199,7 +199,7 @@ public class GameManager : MonoBehaviour
 
         if (!string.IsNullOrEmpty(nameInput.text))
         {
-            GetComponent<MOBGameSDK>().SendStringToTV("ready|" + nameInput.text + "|a");
+            GetComponent<MOBGameSDK>().SendStringToTV("ready|" + nameInput.text + "|" + AvatarID);
         }
         else
         {
