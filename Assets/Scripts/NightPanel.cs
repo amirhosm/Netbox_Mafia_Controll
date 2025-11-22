@@ -75,7 +75,8 @@ public class NightPanel : MonoBehaviour
             {
                 if (t.GetComponent<PlayerItem>().id == selectedID)
                 {
-                    gameManager.ShowMessage((t.GetComponent<PlayerItem>().roleAction == "Godfather" || t.GetComponent<PlayerItem>().team == "White") ? "شهروند" : "مافیا");
+                    if (nightNum > 1)
+                        gameManager.ShowMessage((t.GetComponent<PlayerItem>().roleAction == "Godfather" || t.GetComponent<PlayerItem>().team == "White") ? "شهروند" : "مافیا");
                 }
                 Destroy(t.gameObject);
             }
@@ -88,7 +89,8 @@ public class NightPanel : MonoBehaviour
                 if (t.GetComponent<PlayerItem>().roleAction == "Godfather")
                 {
                     Debug.Log("Send To Godfather >" + "NightMafiaKill:" + selectedID);
-                    gameManager.SendMessageTo(t.GetComponent<PlayerItem>().id, "NightMafiaKill:" + selectedID);
+                    if (nightNum > 1)
+                        gameManager.SendMessageTo(t.GetComponent<PlayerItem>().id, "NightMafiaKill:" + selectedID);
                 }
                 Destroy(t.gameObject);
             }
