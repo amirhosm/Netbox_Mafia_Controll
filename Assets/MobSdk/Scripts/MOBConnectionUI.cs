@@ -16,6 +16,8 @@ public class MOBConnectionUI : MonoBehaviour
     [Header("Panels")]
     public GameObject connectionPanel;
     public GameObject connectionMockPanel;
+    public GameObject reconnectButton;
+    public GameObject reconnectText;
     public GameObject controllerPanel;
 
     [Header("Reconnection UI")]
@@ -199,7 +201,12 @@ public class MOBConnectionUI : MonoBehaviour
         SetStatus("Connection lost! Tap to reconnect.", Color.red);
 
         if (connectionMockPanel != null)
+        {
             connectionMockPanel.SetActive(true);
+            reconnectButton.SetActive(true);
+            reconnectText.SetActive(false);
+        }
+
 
         // Keep the last connection string so user can easily reconnect
         if (connectionInput != null && !string.IsNullOrEmpty(lastConnectionString))
@@ -572,7 +579,11 @@ public class MOBConnectionUI : MonoBehaviour
         ShowConnectionPanel();
 
         if (connectionMockPanel != null)
+        {
             connectionMockPanel.SetActive(true);
+            reconnectButton.SetActive(true);
+            reconnectText.SetActive(false);
+        }
     }
 
     private void ShowConnectionPanel()
@@ -592,7 +603,11 @@ public class MOBConnectionUI : MonoBehaviour
             connectionPanel.SetActive(false);
 
         if (connectionMockPanel != null)
+        {
             connectionMockPanel.SetActive(false);
+            reconnectButton.SetActive(false);
+            reconnectText.SetActive(false);
+        }
 
         if (controllerPanel != null)
             controllerPanel.SetActive(true);
