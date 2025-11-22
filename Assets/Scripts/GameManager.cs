@@ -15,6 +15,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] TMP_InputField keyboardInput;
     public RawImage avatarImg;
     [SerializeField] RTLTextMeshPro messageTxt;
+    [SerializeField] private List<Sprite> Sprites;
+
     [Header("PANELs")]
     [SerializeField] GameObject lobbyPanel;
     [SerializeField] GameObject rolsPanel;
@@ -27,6 +29,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject kickedPanel;
     [SerializeField] NightPanel nightPanel;
     [SerializeField] GameObject transitionPanel;
+    [SerializeField] GameObject AvatarsPanel;
     [Header("Show Role")]
     [SerializeField] RTLTextMeshPro showRoleTxt;
     [Header("Day Talk")]
@@ -47,7 +50,9 @@ public class GameManager : MonoBehaviour
     string roleName, roleAct, roleTeam;
     private Animator transitionAnimator;
     private bool isTransitioning = false;
-    
+
+    private int AvatarID;
+
     // Queue system for handling multiple rapid transitions
     private Queue<System.Action> transitionQueue = new Queue<System.Action>();
     
@@ -512,5 +517,28 @@ public class GameManager : MonoBehaviour
         transitionQueue.Clear();
         transitionPanel.SetActive(false);
         panelSwitchAction?.Invoke();
+    }
+
+    public void OnAvatarImageClicked(int avatarId)
+    {
+        AvatarID = avatarId;
+        avatarImg.texture = Sprites[AvatarID].texture;
+    }
+
+    public void OnClickAvatarOpenPanel()
+    {
+        TransitionToPanel(() =>
+        {
+            AvatarsPanel.SetActive(true);
+        }, AvatarsPanel);
+        
+    }
+
+    public void OnClickAvatarClosePanel()
+    {
+        TransitionToPanel(() =>
+        {
+            AvatarsPanel.SetActive(false);
+        }, lobbyPanel);
     }
 }
