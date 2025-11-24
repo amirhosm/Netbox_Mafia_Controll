@@ -658,6 +658,8 @@ public class MOBConnectionManager : MonoBehaviour
                 Debug.Log($"Processing: {message.Substring(0, Math.Min(50, message.Length))}...");
             }
 
+            Debug.Log("Raw Message: " + message);
+
             if (message.StartsWith("PLAYERID:"))
             {
                 string newPlayerId = message.Substring(9).Trim();

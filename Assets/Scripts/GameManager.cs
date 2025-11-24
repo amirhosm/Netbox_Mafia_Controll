@@ -42,10 +42,16 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject dayVotePlayerBadge;
     [SerializeField] Transform badgeSpawnPoint;
     [SerializeField] float badgeDisplayDuration = 3f;
+    [Header("Lobby")]
+    [SerializeField] Button lobbyReadyBtn;
+    [SerializeField] Sprite readyBtnNormalSprite;
+    [SerializeField] Sprite readyBtnDisabledSprite;
+
+    private bool isPlayerReady = false;
 
     Dictionary<string, byte[]> AllAvatars = new Dictionary<string, byte[]>();
     Dictionary<string, string> playerNames = new Dictionary<string, string>();
-    
+
     string underVoteID;
     string roleName, roleAct, roleTeam;
     private Animator transitionAnimator;
@@ -55,7 +61,7 @@ public class GameManager : MonoBehaviour
 
     // Queue system for handling multiple rapid transitions
     private Queue<System.Action> transitionQueue = new Queue<System.Action>();
-    
+
     // Track which panels have been shown for the first time in the current session
     private HashSet<GameObject> panelsShownFirstTime = new HashSet<GameObject>();
 
@@ -65,7 +71,7 @@ public class GameManager : MonoBehaviour
         //{
         //    keyboard.SetActive(true);
         //});
-        
+
         // Get the Animator component from the transition panel
         if (transitionPanel != null)
         {
@@ -86,24 +92,33 @@ public class GameManager : MonoBehaviour
     {
         // Check if this is the first time showing this panel
         bool shouldTransition = targetPanel == null || !panelsShownFirstTime.Contains(targetPanel);
-        
+
         if (shouldTransition)
         {
+            //Close message panel if open
+            messagePanel.SetActive(false);
+
             // Mark panel as shown and reset all other panels' first-time status
             if (targetPanel != null)
             {
                 panelsShownFirstTime.Clear();
                 panelsShownFirstTime.Add(targetPanel);
             }
-            
+
             if (isTransitioning)
             {
                 // If already transitioning, queue the action
-                transitionQueue.Enqueue(panelSwitchAction);
+                transitionQueue.Enqueue(() => { panelSwitchAction?.Invoke(); });
+                if (targetPanel != null)
+                {
+                    transitionQueue.Enqueue(() => { /* Mark for open animation */ });
+                }
                 return;
             }
-            
-            StartCoroutine(PerformTransition(panelSwitchAction));
+
+            // When targetPanel is null, only do close animation
+            // When targetPanel is provided, do full transition (close + open)
+            StartCoroutine(PerformTransition(panelSwitchAction, targetPanel));
         }
         else
         {
@@ -111,34 +126,69 @@ public class GameManager : MonoBehaviour
             panelSwitchAction?.Invoke();
         }
     }
-    
-    private IEnumerator PerformTransition(System.Action panelSwitchAction)
+
+    private IEnumerator PerformTransition(System.Action panelSwitchAction, GameObject targetPanel = null)
     {
         isTransitioning = true;
-        
+
         // Show transition panel and play close animation
         transitionPanel.SetActive(true);
         transitionAnimator.Play("Transition_Close");
-        
+
         // Wait for close animation to complete
         yield return new WaitForSeconds(GetAnimationLength("Transition_Close"));
-        
+
         // Execute the panel switch action
         panelSwitchAction?.Invoke();
 
         yield return new WaitForSeconds(1f);
 
-        // Play open animation
-        transitionAnimator.Play("Transition_Open");
-        
-        // Wait for open animation to complete
-        yield return new WaitForSeconds(GetAnimationLength("Transition_Open"));
-        
+        // Only play open animation if targetPanel is not null
+        if (targetPanel != null)
+        {
+            // Play open animation
+            transitionAnimator.Play("Transition_Open");
+
+            // Wait for open animation to complete
+            yield return new WaitForSeconds(GetAnimationLength("Transition_Open"));
+        }
+
         // Hide transition panel
         transitionPanel.SetActive(false);
-        
+
         isTransitioning = false;
-        
+
+        // Process next transition in queue if any
+        if (transitionQueue.Count > 0)
+        {
+            var nextAction = transitionQueue.Dequeue();
+
+            // Check if this is an open-only animation marker
+            // If the current state shows panel is closed and we have a queued action
+            StartCoroutine(PerformOpenOnlyTransition(nextAction));
+        }
+    }
+
+    // New method to handle open-only animation
+    private IEnumerator PerformOpenOnlyTransition(System.Action panelSwitchAction)
+    {
+        isTransitioning = true;
+
+        // Execute the panel switch action first
+        panelSwitchAction?.Invoke();
+
+        // Show transition panel and play open animation only
+        transitionPanel.SetActive(true);
+        transitionAnimator.Play("Transition_Open");
+
+        // Wait for open animation to complete
+        yield return new WaitForSeconds(GetAnimationLength("Transition_Open"));
+
+        // Hide transition panel
+        transitionPanel.SetActive(false);
+
+        isTransitioning = false;
+
         // Process next transition in queue if any
         if (transitionQueue.Count > 0)
         {
@@ -146,12 +196,12 @@ public class GameManager : MonoBehaviour
             StartCoroutine(PerformTransition(nextAction));
         }
     }
-    
+
     // Helper method to get animation clip length
     private float GetAnimationLength(string animationName)
     {
         if (transitionAnimator == null) return 0.5f; // Default fallback
-        
+
         AnimationClip[] clips = transitionAnimator.runtimeAnimatorController.animationClips;
         foreach (AnimationClip clip in clips)
         {
@@ -191,6 +241,7 @@ public class GameManager : MonoBehaviour
     {
         keyboard.SetActive(false);
     }
+
     public void OnLobbyReadyBtn()
     {
         var eventSystem = EventSystem.current;
@@ -199,7 +250,31 @@ public class GameManager : MonoBehaviour
 
         if (!string.IsNullOrEmpty(nameInput.text))
         {
-            GetComponent<MOBGameSDK>().SendStringToTV("ready|" + nameInput.text + "|" + AvatarID);
+            // Toggle ready state
+            isPlayerReady = !isPlayerReady;
+
+            if (isPlayerReady)
+            {
+                // Player is now ready
+                GetComponent<MOBGameSDK>().SendStringToTV("ready|" + nameInput.text + "|" + AvatarID);
+
+                // Change button sprite to disabled version
+                if (lobbyReadyBtn != null && readyBtnDisabledSprite != null)
+                {
+                    lobbyReadyBtn.image.sprite = readyBtnDisabledSprite;
+                }
+            }
+            else
+            {
+                // Player is not ready
+                GetComponent<MOBGameSDK>().SendStringToTV("notready|" + nameInput.text + "|" + AvatarID);
+
+                // Change button sprite back to normal
+                if (lobbyReadyBtn != null && readyBtnNormalSprite != null)
+                {
+                    lobbyReadyBtn.image.sprite = readyBtnNormalSprite;
+                }
+            }
         }
         else
         {
@@ -248,7 +323,7 @@ public class GameManager : MonoBehaviour
         {
             playerNames[turnID] = turnName;
         }
-        
+
         TransitionToPanel(() =>
         {
             showRolePanel.SetActive(false);
@@ -265,7 +340,7 @@ public class GameManager : MonoBehaviour
         {
             playerNames[turnID] = turnName;
         }
-        
+
         TransitionToPanel(() =>
         {
             dayTalkPanel.SetActive(false);
@@ -289,21 +364,21 @@ public class GameManager : MonoBehaviour
     {
         dayVoteBtn.SetActive(false);
         SendStringToTV("vote");
-        
+
         // Notify all other players that this player has voted
         BroadcastVoteNotification();
     }
-    
+
     // Broadcast vote notification to all other players
     private void BroadcastVoteNotification()
     {
         string myPlayerId = GetComponent<MOBGameSDK>().GetMyPlayerId();
-        
+
         // Send a broadcast message through the TV to all other players
         // Format: "VOTE_NOTIFICATION:playerID"
         SendStringToTV($"broadcast_vote:{myPlayerId}");
     }
-    
+
     // This method is called when receiving a vote notification from another player
     public void OnPlayerVoted(string voterPlayerId)
     {
@@ -314,16 +389,16 @@ public class GameManager : MonoBehaviour
             Debug.Log("Ignoring own vote notification");
             return;
         }
-        
+
         Debug.Log($"Player {voterPlayerId} has voted! Showing badge...");
-        
+
         // Get the player name from the dictionary
         string voterName = playerNames.ContainsKey(voterPlayerId) ? playerNames[voterPlayerId] : "Unknown Player";
-        
+
         // Show the vote badge with player name
         ShowVoteBadge(voterName);
     }
-    
+
     private void ShowVoteBadge(string playerName)
     {
         if (dayVotePlayerBadge == null)
@@ -331,7 +406,7 @@ public class GameManager : MonoBehaviour
             Debug.LogError("dayVotePlayerBadge is not assigned!");
             return;
         }
-        
+
         // Instantiate the badge
         GameObject badgeInstance;
         if (badgeSpawnPoint != null)
@@ -343,13 +418,13 @@ public class GameManager : MonoBehaviour
             // If no spawn point is set, instantiate as child of the dayVotePanel
             badgeInstance = Instantiate(dayVotePlayerBadge, dayVotePanel.transform);
         }
-        
+
         badgeInstance.SetActive(true);
-        
+
         // Find TextMeshPro component in children and set the player name
         TextMeshProUGUI tmpComponent = badgeInstance.GetComponentInChildren<TextMeshProUGUI>();
         RTLTextMeshPro rtlTmpComponent = badgeInstance.GetComponentInChildren<RTLTextMeshPro>();
-        
+
         if (rtlTmpComponent != null)
         {
             rtlTmpComponent.text = playerName;
@@ -364,15 +439,15 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogWarning("No TextMeshPro component found in badge children!");
         }
-        
+
         // Destroy the badge after the specified duration
         StartCoroutine(DestroyBadgeAfterDelay(badgeInstance, badgeDisplayDuration));
     }
-    
+
     private IEnumerator DestroyBadgeAfterDelay(GameObject badge, float delay)
     {
         yield return new WaitForSeconds(delay);
-        
+
         if (badge != null)
         {
             Destroy(badge);
@@ -396,7 +471,7 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
-        
+
         TransitionToPanel(() =>
         {
             nightPanel.Open(datas, GetComponent<MOBGameSDK>().GetMyPlayerId(), this);
@@ -469,19 +544,26 @@ public class GameManager : MonoBehaviour
         StopAllCoroutines();
         isTransitioning = false;
         transitionQueue.Clear();
-        
+
         // Reset first-time panel tracking
         panelsShownFirstTime.Clear();
-        
+
         // Clear player names dictionary
         playerNames.Clear();
-        
+
+        // Reset ready state
+        isPlayerReady = false;
+        if (lobbyReadyBtn != null && readyBtnNormalSprite != null)
+        {
+            lobbyReadyBtn.image.sprite = readyBtnNormalSprite;
+        }
+
         // Hide transition panel
         if (transitionPanel != null)
         {
             transitionPanel.SetActive(false);
         }
-        
+
         // Reset all panels immediately (no transition needed for reset)
         lobbyPanel.SetActive(false);
         rolsPanel.SetActive(false);
@@ -526,7 +608,7 @@ public class GameManager : MonoBehaviour
         {
             AvatarsPanel.SetActive(true);
         }, AvatarsPanel);
-        
+
     }
 
     public void OnClickAvatarClosePanel()

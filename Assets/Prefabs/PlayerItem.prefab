@@ -453,6 +453,8 @@ MonoBehaviour:
   selectBtn: {fileID: 4086782400021030487}
   mafiaKill1: {fileID: 588473481153994905}
   mafiaKill2: {fileID: 4678429664507575884}
+  Selected: {fileID: 21300000, guid: b37e52e4b47ce764b866c20fe03f03e9, type: 3}
+  Desleceted: {fileID: 21300000, guid: b0c6da8dd26e3f141b7a80a429485143, type: 3}
   isSelected: 0
   isDead: 0
   id: 

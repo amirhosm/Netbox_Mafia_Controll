@@ -11,6 +11,7 @@ public class PlayerItem : MonoBehaviour
     [SerializeField] GameObject selectBtn;
     [SerializeField] GameObject mafiaKill1;
     [SerializeField] GameObject mafiaKill2;
+    [SerializeField] Sprite Selected, Desleceted;
     [HideInInspector] public bool isSelected;
     [HideInInspector] public bool isDead;
     [HideInInspector] public string id, playerName, role;
@@ -34,7 +35,7 @@ public class PlayerItem : MonoBehaviour
 
     public void ToggleSelected(bool selected)
     {
-        GetComponent<Image>().color = selected ? Color.green : Color.white;
+        GetComponent<Image>().sprite = selected ? Selected : Desleceted;
         isSelected = selected;
     }
 
