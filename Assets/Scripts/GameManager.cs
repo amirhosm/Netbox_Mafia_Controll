@@ -34,10 +34,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] RTLTextMeshPro showRoleTxt;
     [Header("Day Talk")]
     [SerializeField] RTLTextMeshPro dayTalkPlayerName;
-    [SerializeField] Texture2D defaultAvatar;
-    [SerializeField] RawImage dayPlayerAvatar;
+    [SerializeField] Image dayAvatar;
     [Header("Day Vote")]
     [SerializeField] RTLTextMeshPro dayVotePlayerName;
+    [SerializeField] Image voteAvatar;
     [SerializeField] GameObject dayVoteBtn;
     [SerializeField] GameObject dayVotePlayerBadge;
     [SerializeField] Transform badgeSpawnPoint;
@@ -241,7 +241,7 @@ public class GameManager : MonoBehaviour
         }, showRolePanel);
     }
 
-    public void ShowDayTalk(string turnID, string turnName)
+    public void ShowDayTalk(string turnID, string turnName, string avatarID)
     {
         // Store player name for later use
         if (!playerNames.ContainsKey(turnID))
@@ -254,17 +254,11 @@ public class GameManager : MonoBehaviour
             showRolePanel.SetActive(false);
             dayTalkPlayerName.text = turnName;
             dayTalkPanel.SetActive(true);
-            dayPlayerAvatar.texture = defaultAvatar;
-            if(AllAvatars.ContainsKey(turnID))
-            {
-                Texture2D texture = new Texture2D(2, 2);
-                bool loaded = texture.LoadImage(AllAvatars[turnID]); // Auto-resizes texture
-                dayPlayerAvatar.texture = texture;
-            }
+            dayAvatar.sprite = Sprites[int.Parse(avatarID)];
         }, dayTalkPanel);
     }
 
-    public void ShowDayVote(string turnID, string turnName)
+    public void ShowDayVote(string turnID, string turnName, string avatarID)
     {
         // Store player name for later use
         if (!playerNames.ContainsKey(turnID))
@@ -277,6 +271,7 @@ public class GameManager : MonoBehaviour
             dayTalkPanel.SetActive(false);
             underVoteID = turnID;
             dayVotePlayerName.text = turnName;
+            voteAvatar.sprite = Sprites[int.Parse(avatarID)];
             dayVotePanel.SetActive(true);
             dayVoteBtn.SetActive(true);
         }, dayVotePanel);
