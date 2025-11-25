@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class NightPanel : MonoBehaviour
 {
@@ -120,10 +121,10 @@ public class NightPanel : MonoBehaviour
             gameManager.SendStringToTV("NightAct:Sniper:" + selectedID);
         }
 
-        //foreach (Transform t in listParent)
-        //{
-        //    Destroy(t.gameObject);
-        //}
+        foreach (Transform t in listParent)
+        {
+            t.GetComponent<Button>().interactable = false;
+        }
 
         confirmed = true;
 
