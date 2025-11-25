@@ -76,7 +76,10 @@ public class NightPanel : MonoBehaviour
                 if (t.GetComponent<PlayerItem>().id == selectedID)
                 {
                     if (nightNum > 1)
-                        gameManager.ShowMessage((t.GetComponent<PlayerItem>().roleAction == "Godfather" || t.GetComponent<PlayerItem>().team == "White") ? "شهروند" : "مافیا");
+                    {
+                        t.GetComponent<PlayerItem>().RevealRole((t.GetComponent<PlayerItem>().roleAction == "Godfather" || t.GetComponent<PlayerItem>().team == "White") ? "شهروند" : "مافیا");
+                        //gameManager.ShowMessage((t.GetComponent<PlayerItem>().roleAction == "Godfather" || t.GetComponent<PlayerItem>().team == "White") ? "شهروند" : "مافیا");
+                    }                        
                 }
             }
             gameManager.SendStringToTV("NightAct:Spy:" + selectedID);

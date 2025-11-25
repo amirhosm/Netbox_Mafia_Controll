@@ -12,12 +12,19 @@ public class PlayerItem : MonoBehaviour
     [SerializeField] GameObject mafiaKill1;
     [SerializeField] GameObject mafiaKill2;
     [SerializeField] Sprite Selected, Desleceted;
+    [SerializeField] private RTLTextMeshPro RoleRevealText;
     [HideInInspector] public bool isSelected;
     [HideInInspector] public bool isDead;
     [HideInInspector] public string id, playerName, role;
     [HideInInspector] public string team;
     [HideInInspector] public string roleAction;
     NightPanel manager;
+    private Animator animator;
+
+    private void Start()
+    {
+        animator = GetComponent<Animator>();
+    }
 
     public void SetFromString(string data, NightPanel Manager)
     {
@@ -76,7 +83,13 @@ public class PlayerItem : MonoBehaviour
     {
         return id + ":" + playerName + ":" + role + ":" + team + ":" + roleAction;
     }
-    
+
+    public void RevealRole(string revealedRole)
+    {
+        RoleRevealText.text = revealedRole;
+        animator.Play("Reveal");
+    }
+
 }
 
 public enum RoleTeam
