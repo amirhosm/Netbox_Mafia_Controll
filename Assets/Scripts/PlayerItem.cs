@@ -12,6 +12,7 @@ public class PlayerItem : MonoBehaviour
     [SerializeField] GameObject mafiaKill1;
     [SerializeField] GameObject mafiaKill2;
     [SerializeField] Sprite Selected, Desleceted;
+    [SerializeField] Image Background;
     [SerializeField] private RTLTextMeshPro RoleRevealText;
     [HideInInspector] public bool isSelected;
     [HideInInspector] public bool isDead;
@@ -42,7 +43,7 @@ public class PlayerItem : MonoBehaviour
 
     public void ToggleSelected(bool selected)
     {
-        GetComponent<Image>().sprite = selected ? Selected : Desleceted;
+        Background.sprite = selected ? Selected : Desleceted;
         isSelected = selected;
     }
 
