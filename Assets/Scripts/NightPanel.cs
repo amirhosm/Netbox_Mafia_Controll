@@ -15,6 +15,7 @@ public class NightPanel : MonoBehaviour
     GameManager gameManager;
     int nightNum;
     Dictionary<string, PlayerItem> AllPlayers = new Dictionary<string, PlayerItem>();
+    bool confirmed;
 
     public void Open(string[] datas, string MyID, GameManager gm)
     {
@@ -54,11 +55,13 @@ public class NightPanel : MonoBehaviour
             }
         }
 
+        confirmed = false;
         conformBtn.SetActive(false);
     }
 
     public void SelectPlayer(string id)
     {
+        if (confirmed) return;
         selectedID = id;
         foreach (Transform item in listParent)
         {
@@ -117,10 +120,12 @@ public class NightPanel : MonoBehaviour
             gameManager.SendStringToTV("NightAct:Sniper:" + selectedID);
         }
 
-        foreach (Transform t in listParent)
-        {
-            Destroy(t.gameObject);
-        }
+        //foreach (Transform t in listParent)
+        //{
+        //    Destroy(t.gameObject);
+        //}
+
+        confirmed = true;
 
         conformBtn.SetActive(false);
     }
