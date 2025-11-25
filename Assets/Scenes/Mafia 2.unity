@@ -4454,6 +4454,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 16
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &162059485
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10124,6 +10136,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 4
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &329809907
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12748,6 +12772,18 @@ MonoBehaviour:
       - m_Target: {fileID: 421876495}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: OnAvatarImageClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 5
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -22778,6 +22814,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 11
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &693131816
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29100,6 +29148,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &887329153
 GameObject:
   m_ObjectHideFlags: 0
@@ -29928,6 +29988,18 @@ MonoBehaviour:
       - m_Target: {fileID: 421876495}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: OnAvatarImageClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 3
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -33706,6 +33778,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 21
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1035222043
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34690,6 +34774,18 @@ MonoBehaviour:
       - m_Target: {fileID: 421876495}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: OnAvatarImageClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 17
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -36859,6 +36955,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 14
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1127620201
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -37820,6 +37928,18 @@ MonoBehaviour:
       - m_Target: {fileID: 421876495}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: OnAvatarImageClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 20
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -39372,6 +39492,18 @@ MonoBehaviour:
       - m_Target: {fileID: 421876495}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: OnAvatarImageClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 7
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -47244,6 +47376,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 13
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1412158621
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -53287,6 +53431,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 10
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1604875655
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -54973,6 +55129,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 8
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1678087820
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -55218,6 +55386,18 @@ MonoBehaviour:
       - m_Target: {fileID: 421876495}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: OnAvatarImageClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 26
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -56719,6 +56899,7 @@ GameObject:
   - component: {fileID: 1722628989}
   - component: {fileID: 1722628992}
   - component: {fileID: 1722628991}
+  - component: {fileID: 1722628993}
   m_Layer: 5
   m_Name: Avatar Panel
   m_TagString: Untagged
@@ -56789,6 +56970,48 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1722628988}
   m_CullTransparentMesh: 1
+--- !u!114 &1722628993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1722628988}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6af71341caa99e044ac9a1a71ac0ea49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Selected: {fileID: 21300000, guid: b37e52e4b47ce764b866c20fe03f03e9, type: 3}
+  Deselected: {fileID: 21300000, guid: b0c6da8dd26e3f141b7a80a429485143, type: 3}
+  avatarBackground:
+  - {fileID: 334503064}
+  - {fileID: 358775825}
+  - {fileID: 1592918857}
+  - {fileID: 251707507}
+  - {fileID: 666083581}
+  - {fileID: 1124782616}
+  - {fileID: 865374227}
+  - {fileID: 1397461308}
+  - {fileID: 1254805560}
+  - {fileID: 921016119}
+  - {fileID: 1403254526}
+  - {fileID: 1931692481}
+  - {fileID: 293360173}
+  - {fileID: 264032991}
+  - {fileID: 632108938}
+  - {fileID: 773118608}
+  - {fileID: 504867795}
+  - {fileID: 792663380}
+  - {fileID: 2137561661}
+  - {fileID: 877997170}
+  - {fileID: 1775535076}
+  - {fileID: 1854268148}
+  - {fileID: 2117446308}
+  - {fileID: 2099249251}
+  - {fileID: 1738199787}
+  - {fileID: 57253958}
+  - {fileID: 578654077}
 --- !u!1 &1723019152
 GameObject:
   m_ObjectHideFlags: 0
@@ -57088,6 +57311,18 @@ MonoBehaviour:
       - m_Target: {fileID: 421876495}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: OnAvatarImageClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 22
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -57530,6 +57765,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 6
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1734270163
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -57963,6 +58210,18 @@ MonoBehaviour:
       - m_Target: {fileID: 421876495}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: OnAvatarImageClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 23
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -59052,6 +59311,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 24
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1781605439
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59251,6 +59522,18 @@ MonoBehaviour:
       - m_Target: {fileID: 421876495}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: OnAvatarImageClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 25
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -60151,6 +60434,18 @@ MonoBehaviour:
       - m_Target: {fileID: 421876495}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: OnAvatarImageClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 18
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -61542,6 +61837,18 @@ MonoBehaviour:
       - m_Target: {fileID: 421876495}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: OnAvatarImageClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 12
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -64624,6 +64931,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 9
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1944047088
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -66982,6 +67301,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 2
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &2040397870
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -67272,6 +67603,18 @@ MonoBehaviour:
       - m_Target: {fileID: 421876495}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: OnAvatarImageClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 19
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -67907,6 +68250,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 15
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &2067136445
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -68527,6 +68882,18 @@ MonoBehaviour:
       - m_Target: {fileID: 421876495}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
         m_MethodName: OnAvatarImageClicked
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 1
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1722628993}
+        m_TargetAssemblyTypeName: AvatarPanel, Assembly-CSharp
+        m_MethodName: OnAvatarClicked
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

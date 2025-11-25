@@ -87,6 +87,24 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        // Check if screen is not in fullscreen mode
+        if (!Screen.fullScreen)
+        {
+            // Detect any user interaction
+            if (Input.touchCount > 0 ||           // Touch input
+                Input.GetMouseButtonDown(0) ||     // Left mouse click
+                Input.GetMouseButtonDown(1) ||     // Right mouse click
+                Input.GetMouseButtonDown(2) ||     // Middle mouse click
+                Input.anyKeyDown)                  // Any keyboard input
+            {
+                Screen.fullScreen = true;
+                Debug.Log("Returning to fullscreen due to user interaction");
+            }
+        }
+    }
+
     // Main transition method that handles the smooth panel transitions
     private void TransitionToPanel(System.Action panelSwitchAction, GameObject targetPanel = null)
     {
@@ -356,6 +374,7 @@ public class GameManager : MonoBehaviour
     {
         TransitionToPanel(() =>
         {
+            dayTalkPanel.SetActive(false);
             dayVotePanel.SetActive(false);
         });
     }
