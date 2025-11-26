@@ -64,13 +64,17 @@ public class PlayerItem : MonoBehaviour
         return act;
     }
 
-    public void ShowToMafiaTeam()
+    public void ShowToMafiaTeam(int night)
     {
         if (team == "Black")
         {
             selectBtn.SetActive(false);
             GetComponent<Button>().interactable = false;
             roleTxt.text = role;
+            if ((night == 1))
+            {
+                HighlightCard();
+            }            
         }
     }
 

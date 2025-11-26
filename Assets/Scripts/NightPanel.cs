@@ -30,12 +30,7 @@ public class NightPanel : MonoBehaviour
         for (int i = 1; i < datas.Length; i++)
         {
             PlayerItem playerItem = Instantiate(playerPrefab, listParent);
-            playerItem.SetFromString(datas[i], this);
-
-            if(nightNum == 1 && playerItem.team == "Black")
-            {
-                playerItem.HighlightCard();
-            }
+            playerItem.SetFromString(datas[i], this);            
 
             if (playerItem.id == myID)
             {
@@ -45,7 +40,7 @@ public class NightPanel : MonoBehaviour
                 myTeam = playerItem.team;
                 playerItem.gameObject.SetActive(false);
             }
-        }
+        }        
 
         ShuffleChildren(listParent);
 
@@ -58,7 +53,7 @@ public class NightPanel : MonoBehaviour
         {
             foreach (Transform item in listParent)
             {
-                item.GetComponent<PlayerItem>().ShowToMafiaTeam();
+                item.GetComponent<PlayerItem>().ShowToMafiaTeam(nightNum);
             }
         }
 

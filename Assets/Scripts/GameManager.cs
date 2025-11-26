@@ -172,7 +172,7 @@ public class GameManager : MonoBehaviour
         }
 
         // Hide transition panel
-        transitionPanel.SetActive(false);
+        //transitionPanel.SetActive(false);
 
         isTransitioning = false;
 
@@ -262,8 +262,7 @@ public class GameManager : MonoBehaviour
 
     public void OnLobbyReadyBtn()
     {
-        var eventSystem = EventSystem.current;
-        Screen.fullScreen = true;
+        var eventSystem = EventSystem.current;        
         if (!eventSystem.alreadySelecting) eventSystem.SetSelectedGameObject(null);
 
         if (!string.IsNullOrEmpty(nameInput.text))
@@ -281,6 +280,7 @@ public class GameManager : MonoBehaviour
                 {
                     lobbyReadyBtn.image.sprite = readyBtnDisabledSprite;
                 }
+                Screen.fullScreen = true;
             }
             else
             {
@@ -501,6 +501,8 @@ public class GameManager : MonoBehaviour
 
         TransitionToPanel(() =>
         {
+            dayVotePanel.SetActive(false);
+            dayTalkPanel.SetActive(false);
             nightPanel.Open(datas, GetComponent<MOBGameSDK>().GetMyPlayerId(), this);
         }, nightPanel.gameObject);
     }
