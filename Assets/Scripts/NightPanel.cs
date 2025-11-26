@@ -31,6 +31,12 @@ public class NightPanel : MonoBehaviour
         {
             PlayerItem playerItem = Instantiate(playerPrefab, listParent);
             playerItem.SetFromString(datas[i], this);
+
+            if(nightNum == 1 && playerItem.team == "Black")
+            {
+                playerItem.HighlightCard();
+            }
+
             if (playerItem.id == myID)
             {
                 roleTxt.text = playerItem.role;
@@ -45,7 +51,7 @@ public class NightPanel : MonoBehaviour
 
         if (nightNum == 1)
         {
-            actTxt.text = (myTeam == "Black") ? "شب معارفه: الکی انتخاب کن" : "شب معارفه: مافیا رو حدس بزن";
+            actTxt.text = (myTeam == "Black") ? "شب معارفه: مافیا رو ببین" : "شب معارفه: مافیا رو حدس بزن";
         }
 
         if (myTeam == "Black")

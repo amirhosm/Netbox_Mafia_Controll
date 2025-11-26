@@ -347,6 +347,7 @@ public class GameManager : MonoBehaviour
             showRolePanel.SetActive(false);
             dayTalkPlayerName.text = turnName;
             dayTalkPanel.SetActive(true);
+            dayTalkPanel.GetComponent<Animator>().Play("NewPlayerBeginTalk");
             dayAvatar.sprite = Sprites[int.Parse(avatarID)];
         }, dayTalkPanel);
     }
@@ -366,7 +367,14 @@ public class GameManager : MonoBehaviour
             dayVotePlayerName.text = turnName;
             voteAvatar.sprite = Sprites[int.Parse(avatarID)];
             dayVotePanel.SetActive(true);
-            dayVoteBtn.SetActive(true);
+            if(turnID == GetComponent<MOBGameSDK>().GetMyPlayerId())
+            {
+                dayVoteBtn.SetActive(false);
+            }
+            else
+            {
+                dayVoteBtn.SetActive(true);
+            }
         }, dayVotePanel);
     }
 

@@ -11,7 +11,7 @@ public class PlayerItem : MonoBehaviour
     [SerializeField] GameObject selectBtn;
     [SerializeField] GameObject mafiaKill1;
     [SerializeField] GameObject mafiaKill2;
-    [SerializeField] Sprite Selected, Desleceted;
+    [SerializeField] Sprite Selected, Desleceted, Highlighted;
     [SerializeField] Image Background;
     [SerializeField] private RTLTextMeshPro RoleRevealText;
     [HideInInspector] public bool isSelected;
@@ -89,6 +89,11 @@ public class PlayerItem : MonoBehaviour
     {
         RoleRevealText.text = revealedRole;
         animator.Play("Reveal");
+    }
+
+    public void HighlightCard()
+    {
+        Background.sprite = Highlighted;
     }
 
 }
