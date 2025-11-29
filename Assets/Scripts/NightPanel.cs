@@ -38,7 +38,7 @@ public class NightPanel : MonoBehaviour
                 actTxt.text = playerItem.GetActText();
                 myAct = playerItem.roleAction;
                 myTeam = playerItem.team;
-                playerItem.gameObject.SetActive(false);
+                if (myAct != "Dr") playerItem.gameObject.SetActive(false);
             }
         }        
 
