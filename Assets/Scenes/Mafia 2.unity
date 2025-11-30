@@ -13620,6 +13620,7 @@ MonoBehaviour:
   nightPanel: {fileID: 1201050406}
   transitionPanel: {fileID: 2016846751}
   AvatarsPanel: {fileID: 1722628988}
+  MockConnectionPanel: {fileID: 0}
   showRoleTxt: {fileID: 1345706995}
   dayTalkPlayerName: {fileID: 1769128650}
   dayAvatar: {fileID: 497381876}

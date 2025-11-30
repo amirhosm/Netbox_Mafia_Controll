@@ -30,6 +30,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] NightPanel nightPanel;
     [SerializeField] GameObject transitionPanel;
     [SerializeField] GameObject AvatarsPanel;
+    [SerializeField] GameObject MockConnectionPanel;
     [Header("Show Role")]
     [SerializeField] RTLTextMeshPro showRoleTxt;
     [Header("Day Talk")]
@@ -89,20 +90,31 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        //// Check if screen is not in fullscreen mode
-        //if (!Screen.fullScreen && !lobbyPanel.activeInHierarchy)
-        //{
-        //    // Detect any user interaction
-        //    if (Input.touchCount > 0 ||           // Touch input
-        //        Input.GetMouseButtonDown(0) ||     // Left mouse click
-        //        Input.GetMouseButtonDown(1) ||     // Right mouse click
-        //        Input.GetMouseButtonDown(2) ||     // Middle mouse click
-        //        Input.anyKeyDown)                  // Any keyboard input
-        //    {
-        //        Screen.fullScreen = true;
-        //        Debug.Log("Returning to fullscreen due to user interaction");
-        //    }
-        //}
+        // Check if screen is not in fullscreen mode
+        if (!Screen.fullScreen && !lobbyPanel.activeInHierarchy)
+        {
+            if (rolsPanel.activeInHierarchy ||
+                showRolePanel.activeInHierarchy ||
+                dayTalkPanel.activeInHierarchy ||
+                dayVotePanel.activeInHierarchy ||
+                winMafiaPanel.activeInHierarchy ||
+                winCitizenPanel.activeInHierarchy ||
+                kickedPanel.activeInHierarchy ||
+                nightPanel.gameObject.activeInHierarchy ||
+                diePanel.activeInHierarchy)
+            {
+                // Detect any user interaction
+                if (Input.touchCount > 0 ||           // Touch input
+                    Input.GetMouseButtonDown(0) ||     // Left mouse click
+                    Input.GetMouseButtonDown(1) ||     // Right mouse click
+                    Input.GetMouseButtonDown(2) ||     // Middle mouse click
+                    Input.anyKeyDown)                  // Any keyboard input
+                {
+                    Screen.fullScreen = true;
+                    Debug.Log("Returning to fullscreen due to user interaction");
+                }
+            }            
+        }
     }
 
     // Main transition method that handles the smooth panel transitions
