@@ -91,30 +91,30 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
         // Check if screen is not in fullscreen mode
-        if (!Screen.fullScreen && !lobbyPanel.activeInHierarchy)
-        {
-            if (rolsPanel.activeInHierarchy ||
-                showRolePanel.activeInHierarchy ||
-                dayTalkPanel.activeInHierarchy ||
-                dayVotePanel.activeInHierarchy ||
-                winMafiaPanel.activeInHierarchy ||
-                winCitizenPanel.activeInHierarchy ||
-                kickedPanel.activeInHierarchy ||
-                nightPanel.gameObject.activeInHierarchy ||
-                diePanel.activeInHierarchy)
-            {
-                // Detect any user interaction
-                if (Input.touchCount > 0 ||           // Touch input
-                    Input.GetMouseButtonDown(0) ||     // Left mouse click
-                    Input.GetMouseButtonDown(1) ||     // Right mouse click
-                    Input.GetMouseButtonDown(2) ||     // Middle mouse click
-                    Input.anyKeyDown)                  // Any keyboard input
-                {
-                    Screen.fullScreen = true;
-                    Debug.Log("Returning to fullscreen due to user interaction");
-                }
-            }            
-        }
+        //if (!Screen.fullScreen && !lobbyPanel.activeInHierarchy)
+        //{
+        //    if (rolsPanel.activeInHierarchy ||
+        //        showRolePanel.activeInHierarchy ||
+        //        dayTalkPanel.activeInHierarchy ||
+        //        dayVotePanel.activeInHierarchy ||
+        //        winMafiaPanel.activeInHierarchy ||
+        //        winCitizenPanel.activeInHierarchy ||
+        //        kickedPanel.activeInHierarchy ||
+        //        nightPanel.gameObject.activeInHierarchy ||
+        //        diePanel.activeInHierarchy)
+        //    {
+        //        // Detect any user interaction
+        //        if (Input.touchCount > 0 ||           // Touch input
+        //            Input.GetMouseButtonDown(0) ||     // Left mouse click
+        //            Input.GetMouseButtonDown(1) ||     // Right mouse click
+        //            Input.GetMouseButtonDown(2) ||     // Middle mouse click
+        //            Input.anyKeyDown)                  // Any keyboard input
+        //        {
+        //            Screen.fullScreen = true;
+        //            Debug.Log("Returning to fullscreen due to user interaction");
+        //        }
+        //    }            
+        //}
     }
 
     // Main transition method that handles the smooth panel transitions
@@ -279,20 +279,20 @@ public class GameManager : MonoBehaviour
 
         if (!string.IsNullOrEmpty(nameInput.text))
         {
-            // Toggle ready state
+            // ✨ NEW: Save username to PlayerPrefs
+            MOBConnectionManager.Instance.SaveUsername(nameInput.text);
+
             isPlayerReady = !isPlayerReady;
 
             if (isPlayerReady)
             {
-                // Player is now ready
                 GetComponent<MOBGameSDK>().SendStringToTV("ready|" + nameInput.text + "|" + AvatarID);
 
-                // Change button sprite to disabled version
                 if (lobbyReadyBtn != null && readyBtnDisabledSprite != null)
                 {
                     lobbyReadyBtn.image.sprite = readyBtnDisabledSprite;
                 }
-                Screen.fullScreen = true;
+                //Screen.fullScreen = true;
             }
             else
             {
