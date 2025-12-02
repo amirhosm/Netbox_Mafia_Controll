@@ -92,6 +92,10 @@ public class MOBGameSDK : MonoBehaviour
         {
             gameManager.MafiaToGodfatherInNight(message.Split(':')[1]);
         }
+        else if (message.StartsWith("NewGame"))
+        {
+            gameManager.ResetAll();
+        }
     }
 
     private void GotAvatar(string arg1, byte[] arg2, string playerId)

@@ -606,7 +606,7 @@ public class GameManager : MonoBehaviour
         }
 
         // Reset all panels immediately (no transition needed for reset)
-        lobbyPanel.SetActive(false);
+        lobbyPanel.SetActive(true);
         rolsPanel.SetActive(false);
         showRolePanel.SetActive(false);
         dayTalkPanel.SetActive(false);
