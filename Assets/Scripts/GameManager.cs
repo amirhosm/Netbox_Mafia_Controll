@@ -274,13 +274,13 @@ public class GameManager : MonoBehaviour
 
     public void OnLobbyReadyBtn()
     {
-        var eventSystem = EventSystem.current;        
+        var eventSystem = EventSystem.current;
         if (!eventSystem.alreadySelecting) eventSystem.SetSelectedGameObject(null);
 
         if (!string.IsNullOrEmpty(nameInput.text))
         {
             // ✨ NEW: Save username to PlayerPrefs
-            MOBConnectionManager.Instance.SaveUsername(nameInput.text);
+            //MOBConnectionManager.Instance.SaveUsername(nameInput.text);
 
             isPlayerReady = !isPlayerReady;
 
@@ -379,7 +379,7 @@ public class GameManager : MonoBehaviour
             dayVotePlayerName.text = turnName;
             voteAvatar.sprite = Sprites[int.Parse(avatarID)];
             dayVotePanel.SetActive(true);
-            if(turnID == GetComponent<MOBGameSDK>().GetMyPlayerId())
+            if (turnID == GetComponent<MOBGameSDK>().GetMyPlayerId())
             {
                 dayVoteBtn.SetActive(false);
             }
@@ -654,6 +654,8 @@ public class GameManager : MonoBehaviour
 
     public void OnClickAvatarClosePanel()
     {
+        GetComponent<MOBGameSDK>().SendStringToTV("avatar|" + AvatarID);
+
         TransitionToPanel(() =>
         {
             AvatarsPanel.SetActive(false);
