@@ -23,8 +23,11 @@ public class RoleShowPanel : MonoBehaviour
 
     private void OnEnable()
     {
-        GetComponent<Animator>().Play("RoleShow_Hide");
-        RoleRevealed = false;
+        if (RoleRevealed)
+        {
+            GetComponent<Animator>().Play("RoleShow_Hide");
+            RoleRevealed = false;
+        }
     }
 
     public void SetData(string roleName, string roelAct)
