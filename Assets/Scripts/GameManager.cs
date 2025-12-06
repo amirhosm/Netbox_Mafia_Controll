@@ -346,6 +346,18 @@ public class GameManager : MonoBehaviour
         }, showRolePanel);
     }
 
+    public void SetRoleReconnect(string RoleName, string RoleTeam, string RoleAct)
+    {
+
+        roleName = RoleName;
+        roleAct = RoleAct;
+        roleTeam = RoleTeam;
+        showRoleTxt.text = RoleName;
+
+        showRolePanel.GetComponent<RoleShowPanel>().SetData(RoleName, RoleAct);
+        Debug.Log(roleAct + ">" + roleTeam);
+    }
+
     public void ShowDayTalk(string turnID, string turnName, string avatarID)
     {
         // Store player name for later use

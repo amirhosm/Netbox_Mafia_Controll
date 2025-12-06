@@ -51,6 +51,10 @@ public class MOBGameSDK : MonoBehaviour
         {
             gameManager.GotoShowRolePanel(message.Split(':')[1], message.Split(':')[2], message.Split(':')[3]);
         }
+        else if (message.StartsWith("ReconnectRole"))
+        {
+            gameManager.SetRoleReconnect(message.Split(':')[1], message.Split(':')[2], message.Split(':')[3]);
+        }
         else if (message.StartsWith("DayTalk"))
         {
             gameManager.ShowDayTalk(message.Split(':')[1], message.Split(':')[2], message.Split(':')[3]);
