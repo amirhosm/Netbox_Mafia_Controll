@@ -41,7 +41,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] Image voteAvatar;
     [SerializeField] GameObject dayVoteBtn;
     [SerializeField] GameObject dayVotePlayerBadge;
-    [SerializeField] Transform badgeSpawnPoint;
+    [SerializeField] List<Transform> badgeSpawnPoints;
     [SerializeField] float badgeDisplayDuration = 3f;
     [Header("Lobby")]
     [SerializeField] Button lobbyReadyBtn;
@@ -65,6 +65,9 @@ public class GameManager : MonoBehaviour
 
     // Track which panels have been shown for the first time in the current session
     private HashSet<GameObject> panelsShownFirstTime = new HashSet<GameObject>();
+
+    // Track used spawn points to avoid duplicates
+    private List<int> availableSpawnPointIndices = new List<int>();
 
     private void Start()
     {
@@ -384,6 +387,9 @@ public class GameManager : MonoBehaviour
             playerNames[turnID] = turnName;
         }
 
+        // Reset available spawn points for new voting round
+        ResetBadgeSpawnPoints();
+
         TransitionToPanel(() =>
         {
             dayTalkPanel.SetActive(false);
@@ -450,6 +456,20 @@ public class GameManager : MonoBehaviour
         ShowVoteBadge(voterName);
     }
 
+    private void ResetBadgeSpawnPoints()
+    {
+        availableSpawnPointIndices.Clear();
+
+        if (badgeSpawnPoints != null && badgeSpawnPoints.Count > 0)
+        {
+            for (int i = 0; i < badgeSpawnPoints.Count; i++)
+            {
+                availableSpawnPointIndices.Add(i);
+            }
+            Debug.Log($"Reset badge spawn points. Available: {availableSpawnPointIndices.Count}");
+        }
+    }
+
     private void ShowVoteBadge(string playerName)
     {
         if (dayVotePlayerBadge == null)
@@ -460,13 +480,32 @@ public class GameManager : MonoBehaviour
 
         // Instantiate the badge
         GameObject badgeInstance;
-        if (badgeSpawnPoint != null)
+
+        // Select random spawn point from available ones
+        if (badgeSpawnPoints != null && badgeSpawnPoints.Count > 0 && availableSpawnPointIndices.Count > 0)
         {
-            badgeInstance = Instantiate(dayVotePlayerBadge, badgeSpawnPoint.position, Quaternion.identity, badgeSpawnPoint);
+            // If all spawn points are used, reset the available list
+            if (availableSpawnPointIndices.Count == 0)
+            {
+                ResetBadgeSpawnPoints();
+            }
+
+            // Pick a random index from available indices
+            int randomIndex = Random.Range(0, availableSpawnPointIndices.Count);
+            int spawnPointIndex = availableSpawnPointIndices[randomIndex];
+
+            // Remove this index from available list
+            availableSpawnPointIndices.RemoveAt(randomIndex);
+
+            Transform selectedSpawnPoint = badgeSpawnPoints[spawnPointIndex];
+            badgeInstance = Instantiate(dayVotePlayerBadge, selectedSpawnPoint.position, Quaternion.identity, selectedSpawnPoint);
+
+            Debug.Log($"Badge spawned at point {spawnPointIndex}. Remaining available: {availableSpawnPointIndices.Count}");
         }
         else
         {
-            // If no spawn point is set, instantiate as child of the dayVotePanel
+            // Fallback: If no spawn points are set, instantiate as child of the dayVotePanel
+            Debug.LogWarning("No badge spawn points assigned! Using dayVotePanel as parent.");
             badgeInstance = Instantiate(dayVotePlayerBadge, dayVotePanel.transform);
         }
 
