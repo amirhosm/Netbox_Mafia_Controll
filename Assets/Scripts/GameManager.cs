@@ -60,14 +60,30 @@ public class GameManager : MonoBehaviour
 
     private int AvatarID;
 
+    // Struct to hold complete transition information
+    private struct TransitionRequest
+    {
+        public System.Action panelSwitchAction;
+        public GameObject targetPanel;
+
+        public TransitionRequest(System.Action action, GameObject panel)
+        {
+            panelSwitchAction = action;
+            targetPanel = panel;
+        }
+    }
+
     // Queue system for handling multiple rapid transitions
-    private Queue<System.Action> transitionQueue = new Queue<System.Action>();
+    private Queue<TransitionRequest> transitionQueue = new Queue<TransitionRequest>();
 
     // Track which panels have been shown for the first time in the current session
     private HashSet<GameObject> panelsShownFirstTime = new HashSet<GameObject>();
 
     // Track used spawn points to avoid duplicates
     private List<int> availableSpawnPointIndices = new List<int>();
+
+    // Track the active transition coroutine
+    private Coroutine activeTransitionCoroutine;
 
     private void Start()
     {
@@ -140,22 +156,20 @@ public class GameManager : MonoBehaviour
 
             if (isTransitioning)
             {
-                // If already transitioning, queue the action
-                transitionQueue.Enqueue(() => { panelSwitchAction?.Invoke(); });
-                if (targetPanel != null)
-                {
-                    transitionQueue.Enqueue(() => { /* Mark for open animation */ });
-                }
+                // If already transitioning, queue the complete request with all context
+                Debug.Log($"[Transition] Currently transitioning, queueing request. Target: {(targetPanel != null ? targetPanel.name : "CLOSE-ONLY")}. Queue size: {transitionQueue.Count}");
+                transitionQueue.Enqueue(new TransitionRequest(panelSwitchAction, targetPanel));
                 return;
             }
 
-            // When targetPanel is null, only do close animation
-            // When targetPanel is provided, do full transition (close + open)
-            StartCoroutine(PerformTransition(panelSwitchAction, targetPanel));
+            // Start the transition
+            Debug.Log($"[Transition] Starting new transition. Target: {(targetPanel != null ? targetPanel.name : "CLOSE-ONLY")}");
+            activeTransitionCoroutine = StartCoroutine(PerformTransition(panelSwitchAction, targetPanel));
         }
         else
         {
             // No transition, just execute the action immediately
+            Debug.Log($"[Transition] Panel {targetPanel.name} already shown, executing immediately without transition");
             panelSwitchAction?.Invoke();
         }
     }
@@ -163,70 +177,62 @@ public class GameManager : MonoBehaviour
     private IEnumerator PerformTransition(System.Action panelSwitchAction, GameObject targetPanel = null)
     {
         isTransitioning = true;
+        bool isCloseOnly = (targetPanel == null);
+
+        Debug.Log($"[Transition] PerformTransition started. Type: {(isCloseOnly ? "CLOSE-ONLY" : "FULL")}. Target: {(targetPanel != null ? targetPanel.name : "none")}");
 
         // Show transition panel and play close animation
         transitionPanel.SetActive(true);
-        transitionAnimator.Play("Transition_Close");
+        transitionAnimator.Play("Transition_Close", 0, 0f); // Force start from beginning
 
         // Wait for close animation to complete
-        yield return new WaitForSeconds(GetAnimationLength("Transition_Close"));
+        float closeAnimLength = GetAnimationLength("Transition_Close");
+        Debug.Log($"[Transition] Playing close animation ({closeAnimLength}s)");
+        yield return new WaitForSeconds(closeAnimLength);
 
         // Execute the panel switch action
         panelSwitchAction?.Invoke();
+        Debug.Log($"[Transition] Panel switch action executed");
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(0.1f); // Small buffer to ensure panel state is updated
 
         // Only play open animation if targetPanel is not null
-        if (targetPanel != null)
+        if (!isCloseOnly)
         {
             // Play open animation
-            transitionAnimator.Play("Transition_Open");
+            transitionAnimator.Play("Transition_Open", 0, 0f); // Force start from beginning
 
             // Wait for open animation to complete
-            yield return new WaitForSeconds(GetAnimationLength("Transition_Open"));
+            float openAnimLength = GetAnimationLength("Transition_Open");
+            Debug.Log($"[Transition] Playing open animation ({openAnimLength}s)");
+            yield return new WaitForSeconds(openAnimLength);
+
+            // Hide transition panel only after opening a new panel
+            transitionPanel.SetActive(false);
+            Debug.Log($"[Transition] Transition panel hidden after open animation");
+        }
+        else
+        {
+            // For close-only: keep transition panel visible (covering screen)
+            Debug.Log($"[Transition] CLOSE-ONLY complete. Transition panel remains visible covering screen.");
         }
 
-        // Hide transition panel
-        //transitionPanel.SetActive(false);
-
         isTransitioning = false;
+        Debug.Log($"[Transition] Transition complete. Queue size: {transitionQueue.Count}");
 
         // Process next transition in queue if any
         if (transitionQueue.Count > 0)
         {
-            var nextAction = transitionQueue.Dequeue();
+            var nextRequest = transitionQueue.Dequeue();
+            Debug.Log($"[Transition] Processing next queued transition. Target: {(nextRequest.targetPanel != null ? nextRequest.targetPanel.name : "CLOSE-ONLY")}. Remaining in queue: {transitionQueue.Count}");
 
-            // Check if this is an open-only animation marker
-            // If the current state shows panel is closed and we have a queued action
-            StartCoroutine(PerformOpenOnlyTransition(nextAction));
+            // Start the next transition with complete context preserved
+            activeTransitionCoroutine = StartCoroutine(PerformTransition(nextRequest.panelSwitchAction, nextRequest.targetPanel));
         }
-    }
-
-    // New method to handle open-only animation
-    private IEnumerator PerformOpenOnlyTransition(System.Action panelSwitchAction)
-    {
-        isTransitioning = true;
-
-        // Execute the panel switch action first
-        panelSwitchAction?.Invoke();
-
-        // Show transition panel and play open animation only
-        transitionPanel.SetActive(true);
-        transitionAnimator.Play("Transition_Open");
-
-        // Wait for open animation to complete
-        yield return new WaitForSeconds(GetAnimationLength("Transition_Open"));
-
-        // Hide transition panel
-        transitionPanel.SetActive(false);
-
-        isTransitioning = false;
-
-        // Process next transition in queue if any
-        if (transitionQueue.Count > 0)
+        else
         {
-            var nextAction = transitionQueue.Dequeue();
-            StartCoroutine(PerformTransition(nextAction));
+            activeTransitionCoroutine = null;
+            Debug.Log($"[Transition] Queue empty. No more transitions pending.");
         }
     }
 
@@ -243,6 +249,7 @@ public class GameManager : MonoBehaviour
                 return clip.length;
             }
         }
+        Debug.LogWarning($"[Transition] Animation '{animationName}' not found, using default length");
         return 0.5f; // Default fallback if animation not found
     }
 
@@ -414,7 +421,7 @@ public class GameManager : MonoBehaviour
         {
             dayTalkPanel.SetActive(false);
             dayVotePanel.SetActive(false);
-        });
+        }); // targetPanel is null - CLOSE-ONLY, keeps transition panel visible
     }
 
     public void OnBtn_DayVote()
@@ -575,7 +582,7 @@ public class GameManager : MonoBehaviour
         TransitionToPanel(() =>
         {
             nightPanel.gameObject.SetActive(false);
-        });
+        }); // targetPanel is null - CLOSE-ONLY, keeps transition panel visible
     }
 
     public void SendMessageTo(string targetPlayerId, string message)
@@ -632,8 +639,15 @@ public class GameManager : MonoBehaviour
 
     public void ResetAll()
     {
-        // Stop any ongoing transitions and clear queue
-        StopAllCoroutines();
+        Debug.Log("[Transition] ResetAll called - stopping all transitions");
+
+        // Stop the active transition coroutine specifically
+        if (activeTransitionCoroutine != null)
+        {
+            StopCoroutine(activeTransitionCoroutine);
+            activeTransitionCoroutine = null;
+        }
+
         isTransitioning = false;
         transitionQueue.Clear();
 
@@ -681,7 +695,15 @@ public class GameManager : MonoBehaviour
     // Optional: Method for immediate panel switch without transition (for emergency cases)
     public void ImmediatePanelSwitch(System.Action panelSwitchAction)
     {
-        StopAllCoroutines();
+        Debug.Log("[Transition] ImmediatePanelSwitch called - forcing immediate transition");
+
+        // Stop the active transition coroutine specifically
+        if (activeTransitionCoroutine != null)
+        {
+            StopCoroutine(activeTransitionCoroutine);
+            activeTransitionCoroutine = null;
+        }
+
         isTransitioning = false;
         transitionQueue.Clear();
         transitionPanel.SetActive(false);
