@@ -336,6 +336,10 @@ public class GameManager : MonoBehaviour
             lobbyPanel.SetActive(false);
             blckScreen.SetActive(true);
             rolsPanel.SetActive(true);
+            if (lobbyReadyBtn != null && readyBtnNormalSprite != null)
+            {
+                lobbyReadyBtn.image.sprite = readyBtnNormalSprite;
+            }
         }, rolsPanel);
     }
 
@@ -350,6 +354,10 @@ public class GameManager : MonoBehaviour
             roleAct = RoleAct;
             roleTeam = RoleTeam;
             showRoleTxt.text = RoleName;
+            if (lobbyReadyBtn != null && readyBtnNormalSprite != null)
+            {
+                lobbyReadyBtn.image.sprite = readyBtnNormalSprite;
+            }
 
             showRolePanel.GetComponent<RoleShowPanel>().SetData(RoleName, RoleAct);
             Debug.Log(roleAct + ">" + roleTeam);
@@ -383,6 +391,10 @@ public class GameManager : MonoBehaviour
             dayTalkPanel.SetActive(true);
             dayTalkPanel.GetComponent<Animator>().Play("NewPlayerBeginTalk");
             dayAvatar.sprite = Sprites[int.Parse(avatarID)];
+            if (lobbyReadyBtn != null && readyBtnNormalSprite != null)
+            {
+                lobbyReadyBtn.image.sprite = readyBtnNormalSprite;
+            }
         }, dayTalkPanel);
     }
 
@@ -659,9 +671,27 @@ public class GameManager : MonoBehaviour
 
         // Reset ready state
         isPlayerReady = false;
-        if (lobbyReadyBtn != null && readyBtnNormalSprite != null)
+
+        // FIXED: Properly reset the button state
+        if (lobbyReadyBtn != null)
         {
-            lobbyReadyBtn.image.sprite = readyBtnNormalSprite;
+            // Deselect the button in EventSystem
+            if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject == lobbyReadyBtn.gameObject)
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+            }
+
+            // Reset interactable state to force visual refresh
+            lobbyReadyBtn.interactable = false;
+            lobbyReadyBtn.interactable = true;
+
+            // Now set the sprite
+            if (readyBtnNormalSprite != null)
+            {
+                lobbyReadyBtn.image.sprite = readyBtnNormalSprite;
+            }
+
+            Debug.Log("[ResetAll] Lobby ready button reset to normal state");
         }
 
         // Hide transition panel
