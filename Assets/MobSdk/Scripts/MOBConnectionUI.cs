@@ -434,6 +434,7 @@ public class MOBConnectionUI : MonoBehaviour
         Debug.Log($"[MOBConnectionUI] Manual connect: {input}");
         AddDebugLog($"Manual: {input}");
         AttemptConnection(input);
+        reconnectButton.SetActive(false);
     }
 
     private bool ParseConnectionString(string input, out string ip, out int port)
