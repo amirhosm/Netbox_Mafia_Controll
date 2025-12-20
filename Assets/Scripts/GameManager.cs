@@ -31,6 +31,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject transitionPanel;
     [SerializeField] GameObject AvatarsPanel;
     [SerializeField] GameObject MockConnectionPanel;
+    [SerializeField] GameObject SessionFullPanel;
     [Header("Show Role")]
     [SerializeField] RTLTextMeshPro showRoleTxt;
     [Header("Day Talk")]
@@ -607,6 +608,11 @@ public class GameManager : MonoBehaviour
         nightPanel.MafiaToGodfatherInNight(id);
     }
 
+    public void LecterToMafiaInNight(string id)
+    {
+        nightPanel.LecterToMafiaInNight(id);
+    }
+
     public void SendStringToTV(string message)
     {
         GetComponent<MOBGameSDK>().SendStringToTV(message);
@@ -642,6 +648,11 @@ public class GameManager : MonoBehaviour
         {
             kickedPanel.SetActive(true);
         }, kickedPanel);
+    }
+
+    public void ShowSessionFull()
+    {
+        SessionFullPanel.SetActive(true);
     }
 
     public void AddAvatar(string playerId, byte[] avatar)

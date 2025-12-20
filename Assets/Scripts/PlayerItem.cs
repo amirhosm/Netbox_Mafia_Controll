@@ -11,6 +11,7 @@ public class PlayerItem : MonoBehaviour
     [SerializeField] GameObject selectBtn;
     [SerializeField] GameObject mafiaKill1;
     [SerializeField] GameObject mafiaKill2;
+    [SerializeField] GameObject mafiaSave;
     [SerializeField] Sprite Selected, Desleceted, Highlighted;
     [SerializeField] Image Background;
     [SerializeField] private RTLTextMeshPro RoleRevealText;
@@ -82,6 +83,11 @@ public class PlayerItem : MonoBehaviour
     {
         if (mafiaKill1.activeSelf) mafiaKill2.SetActive(true);
         else mafiaKill1.SetActive(true);
+    }
+
+    public void SelectedToSave() 
+    {
+        mafiaSave.SetActive(true);
     }
 
     public string GetDataString()

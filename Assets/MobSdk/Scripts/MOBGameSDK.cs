@@ -96,9 +96,17 @@ public class MOBGameSDK : MonoBehaviour
         {
             gameManager.MafiaToGodfatherInNight(message.Split(':')[1]);
         }
+        else if (message.StartsWith("NightLecterSave"))
+        {
+            gameManager.LecterToMafiaInNight(message.Split(':')[1]);
+        }
         else if (message.StartsWith("NewGame"))
         {
             gameManager.ResetAll();
+        }
+        else if (message.StartsWith("SessionFull"))
+        {
+            gameManager.ShowSessionFull();
         }
     }
 

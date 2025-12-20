@@ -102,6 +102,19 @@ public class NightPanel : MonoBehaviour
             }
             gameManager.SendStringToTV("NightAct:Mafia:" + selectedID);
         }
+        else if (myAct == "Lecter")
+        {
+            foreach (Transform t in listParent)
+            {
+                if (t.GetComponent<PlayerItem>().roleAction == "Mafia")
+                {
+                    Debug.Log("Send To Mafia >" + "NightLecterSave:" + selectedID);
+                    if (nightNum > 1)
+                        gameManager.SendMessageTo(t.GetComponent<PlayerItem>().id, "NightLecterSave:" + selectedID);
+                }
+            }
+            gameManager.SendStringToTV("NightAct:Mafia:" + selectedID);
+        }
         else if (myAct == "Godfather")
         {
             //send to tv to kill by godfather
@@ -141,6 +154,20 @@ public class NightPanel : MonoBehaviour
                 if (t.GetComponent<PlayerItem>().id == selected)
                 {
                     t.GetComponent<PlayerItem>().SelectedToKill();
+                }
+            }
+        }
+    }
+
+    public void LecterToMafiaInNight(string selected)
+    {
+        if (listParent.childCount > 0)
+        {
+            foreach (Transform t in listParent)
+            {
+                if (t.GetComponent<PlayerItem>().id == selected)
+                {
+                    t.GetComponent<PlayerItem>().SelectedToSave();
                 }
             }
         }

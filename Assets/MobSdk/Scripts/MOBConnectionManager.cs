@@ -20,6 +20,7 @@ public class MOBConnectionManager : MonoBehaviour
     public int tcpPort = 7777;
     public int wsPort = 7778;
     public string wsPath = "/mobile";
+    public GameObject SessionFullPanel;
 
     [Header("Auto-Reconnect Settings")]
     public int maxReconnectAttempts = 5; // REDUCED from 10
@@ -354,6 +355,11 @@ public class MOBConnectionManager : MonoBehaviour
             wsClient.OnClose += (sender, e) =>
             {
                 Debug.Log($"WebSocket closed: Code={e.Code}, Reason={e.Reason}");
+
+                if(e.Code == 1000 || e.Reason.ToLower() == "session full")
+                {
+                    SessionFullPanel.SetActive(true);
+                }
 
                 if (UnityMainThreadDispatcher.Instance != null)
                 {
