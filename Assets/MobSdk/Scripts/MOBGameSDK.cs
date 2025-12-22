@@ -108,6 +108,10 @@ public class MOBGameSDK : MonoBehaviour
         {
             gameManager.ShowSessionFull();
         }
+        else if (message.StartsWith("SessionRunning"))
+        {
+            gameManager.ShowSessionRunning();
+        }
     }
 
     private void GotAvatar(string arg1, byte[] arg2, string playerId)

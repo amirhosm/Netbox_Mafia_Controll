@@ -10,6 +10,7 @@ public class NightPanel : MonoBehaviour
     [SerializeField] PlayerItem playerPrefab;
     [SerializeField] RTLTextMeshPro actTxt;
     [SerializeField] RTLTextMeshPro roleTxt;
+    [SerializeField] RTLTextMeshPro timerTxt;
     [SerializeField] GameObject conformBtn;
     string myID, myAct, myTeam;
     string selectedID;
@@ -17,6 +18,10 @@ public class NightPanel : MonoBehaviour
     int nightNum;
     Dictionary<string, PlayerItem> AllPlayers = new Dictionary<string, PlayerItem>();
     bool confirmed;
+
+    // Timer variables
+    private Coroutine timerCoroutine;
+    private bool timerComplete = false;
 
     public void Open(string[] datas, string MyID, GameManager gm)
     {
@@ -30,7 +35,7 @@ public class NightPanel : MonoBehaviour
         for (int i = 1; i < datas.Length; i++)
         {
             PlayerItem playerItem = Instantiate(playerPrefab, listParent);
-            playerItem.SetFromString(datas[i], this);            
+            playerItem.SetFromString(datas[i], this);
 
             if (playerItem.id == myID)
             {
@@ -40,7 +45,7 @@ public class NightPanel : MonoBehaviour
                 myTeam = playerItem.team;
                 if (myAct != "Dr") playerItem.gameObject.SetActive(false);
             }
-        }        
+        }
 
         ShuffleChildren(listParent);
 
@@ -57,19 +62,96 @@ public class NightPanel : MonoBehaviour
             }
         }
 
+        if (myAct == "DieHard")
+        {
+            foreach (Transform item in listParent)
+            {
+                if (item.GetComponent<PlayerItem>().roleAction == "DieHard")
+                    item.GetComponent<PlayerItem>().ShowDieHardButton();
+            }
+        }
+
         confirmed = false;
+        timerComplete = false;
+
+        // Hide button and start timer
         conformBtn.SetActive(false);
+
+        // Start countdown timer
+        if (timerCoroutine != null)
+        {
+            StopCoroutine(timerCoroutine);
+        }
+        timerCoroutine = StartCoroutine(CountdownTimer());
+    }
+
+    private IEnumerator CountdownTimer()
+    {
+        int timeRemaining = 10;
+        timerTxt.gameObject.SetActive(true);
+
+        // Update timer display
+        while (timeRemaining > 0)
+        {
+            if (timerTxt != null)
+            {
+                timerTxt.text = timeRemaining.ToString();
+            }
+
+            yield return new WaitForSeconds(1f);
+            timeRemaining--;
+        }
+
+        // Timer complete - show 0
+        if (timerTxt != null)
+        {
+            timerTxt.text = "0";
+        }
+
+        timerComplete = true;
+
+        // Show button but keep it non-interactable until player selection
+        conformBtn.SetActive(true);
+        timerTxt.gameObject.SetActive(false);
+
+        Button btnComponent = conformBtn.GetComponent<Button>();
+        if (btnComponent != null)
+        {
+            btnComponent.interactable = false;
+        }
+
+        Debug.Log("[NightPanel] Timer complete. Button shown but disabled until player selection.");
     }
 
     public void SelectPlayer(string id)
     {
         if (confirmed) return;
+
         selectedID = id;
+
         foreach (Transform item in listParent)
         {
             item.GetComponent<PlayerItem>().ToggleSelected(item.GetComponent<PlayerItem>().id == id);
         }
-        conformBtn.SetActive(true);
+
+        // Only show and enable button if timer is complete
+        if (timerComplete)
+        {
+            conformBtn.SetActive(true);
+            timerTxt.gameObject.SetActive(false);
+
+            Button btnComponent = conformBtn.GetComponent<Button>();
+            if (btnComponent != null)
+            {
+                btnComponent.interactable = true;
+            }
+
+            Debug.Log("[NightPanel] Player selected. Confirm button enabled.");
+        }
+        else
+        {
+            Debug.Log("[NightPanel] Player selected but timer not complete yet.");
+        }
     }
 
     public void OnBtn_Confirm()
@@ -84,7 +166,7 @@ public class NightPanel : MonoBehaviour
                     {
                         t.GetComponent<PlayerItem>().RevealRole((t.GetComponent<PlayerItem>().roleAction == "Godfather" || t.GetComponent<PlayerItem>().team == "White") ? "شهروند" : "مافیا");
                         //gameManager.ShowMessage((t.GetComponent<PlayerItem>().roleAction == "Godfather" || t.GetComponent<PlayerItem>().team == "White") ? "شهروند" : "مافیا");
-                    }                        
+                    }
                 }
             }
             gameManager.SendStringToTV("NightAct:Spy:" + selectedID);
@@ -143,6 +225,13 @@ public class NightPanel : MonoBehaviour
         confirmed = true;
 
         conformBtn.SetActive(false);
+
+        // Stop timer coroutine if still running
+        if (timerCoroutine != null)
+        {
+            StopCoroutine(timerCoroutine);
+            timerCoroutine = null;
+        }
     }
 
     public void MafiaToGodfatherInNight(string selected)

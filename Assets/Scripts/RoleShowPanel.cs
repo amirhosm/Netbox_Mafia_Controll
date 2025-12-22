@@ -10,13 +10,11 @@ public class RoleShowPanel : MonoBehaviour
     [SerializeField] private Sprite GodfatherSprite;
     [SerializeField] private Sprite DetectiveSprite;
     [SerializeField] private Sprite MafiaSprite;
-    [SerializeField] private Sprite Mafia2Sprite;
-    [SerializeField] private Sprite MafiaFemaleSprite;
     [SerializeField] private Sprite DoctorLecterSprite;
     [SerializeField] private Sprite DoctorSprite;
     [SerializeField] private Sprite SniperSprite;
-    [SerializeField] private Sprite CitizenMaleSprite;
-    [SerializeField] private Sprite CitizenFemaleSprite;
+    [SerializeField] private Sprite CitizenSprite;
+    [SerializeField] private Sprite DieHardSprite;
 
     bool RoleRevealed = false;
     bool RoleIsRevealable = true;
@@ -44,13 +42,7 @@ public class RoleShowPanel : MonoBehaviour
         }
         else if (roelAct == "Mafia")
         {
-            int rnd = Random.Range(0, 100);
-            if (rnd > 66)
-                RoleImage.sprite = MafiaSprite;
-            else if (rnd <= 66 && rnd > 33)
-                RoleImage.sprite = Mafia2Sprite;
-            else if (rnd <= 33)
-                RoleImage.sprite = MafiaFemaleSprite;
+            RoleImage.sprite = MafiaSprite;
         }
         else if (roelAct == "DrLecter")
         {
@@ -66,11 +58,11 @@ public class RoleShowPanel : MonoBehaviour
         }
         else if (roelAct == "Citizen")
         {
-            int rnd = Random.Range(0, 100);
-            if (rnd > 50)
-                RoleImage.sprite = CitizenMaleSprite;
-            else if (rnd <= 50)
-                RoleImage.sprite = CitizenFemaleSprite;
+            RoleImage.sprite = CitizenSprite;
+        }
+        else if (roelAct == "DieHard")
+        {
+            RoleImage.sprite = DieHardSprite;
         }
     }
 

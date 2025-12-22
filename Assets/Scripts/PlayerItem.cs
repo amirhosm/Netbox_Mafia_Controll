@@ -12,6 +12,7 @@ public class PlayerItem : MonoBehaviour
     [SerializeField] GameObject mafiaKill1;
     [SerializeField] GameObject mafiaKill2;
     [SerializeField] GameObject mafiaSave;
+    [SerializeField] GameObject dieHardButton;
     [SerializeField] Sprite Selected, Desleceted, Highlighted;
     [SerializeField] Image Background;
     [SerializeField] private RTLTextMeshPro RoleRevealText;
@@ -62,6 +63,7 @@ public class PlayerItem : MonoBehaviour
         else if (roleAction == "Sniper") act = "به یک نفر شلیک کن";
         else if (roleAction == "Godfather") act = "یک نفر رابکش";
         else if (roleAction == "Mafia") act = "یک نفر را پیشنهاد بده";
+        else if (roleAction == "DieHard") act = "میتونی استعلام بگیری";
         return act;
     }
 
@@ -75,8 +77,13 @@ public class PlayerItem : MonoBehaviour
             if ((night == 1))
             {
                 HighlightCard();
-            }            
+            }
         }
+    }
+
+    public void ShowDieHardButton()
+    {
+        dieHardButton.SetActive(true);
     }
 
     public void SelectedToKill()
@@ -85,7 +92,7 @@ public class PlayerItem : MonoBehaviour
         else mafiaKill1.SetActive(true);
     }
 
-    public void SelectedToSave() 
+    public void SelectedToSave()
     {
         mafiaSave.SetActive(true);
     }
@@ -105,6 +112,8 @@ public class PlayerItem : MonoBehaviour
     {
         Background.sprite = Highlighted;
     }
+
+
 
 }
 

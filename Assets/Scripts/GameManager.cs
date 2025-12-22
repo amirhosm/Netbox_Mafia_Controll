@@ -32,6 +32,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject AvatarsPanel;
     [SerializeField] GameObject MockConnectionPanel;
     [SerializeField] GameObject SessionFullPanel;
+    [SerializeField] GameObject SessionRunningPanel;
     [Header("Show Role")]
     [SerializeField] RTLTextMeshPro showRoleTxt;
     [Header("Day Talk")]
@@ -653,6 +654,11 @@ public class GameManager : MonoBehaviour
     public void ShowSessionFull()
     {
         SessionFullPanel.SetActive(true);
+    }
+
+    public void ShowSessionRunning()
+    {
+        SessionRunningPanel.SetActive(true);
     }
 
     public void AddAvatar(string playerId, byte[] avatar)
