@@ -87,7 +87,7 @@ public class NightPanel : MonoBehaviour
 
     private IEnumerator CountdownTimer()
     {
-        int timeRemaining = 10;
+        int timeRemaining = Random.Range(4,11);
         timerTxt.gameObject.SetActive(true);
 
         // Update timer display
