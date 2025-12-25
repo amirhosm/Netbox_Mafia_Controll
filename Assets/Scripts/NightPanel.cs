@@ -87,7 +87,11 @@ public class NightPanel : MonoBehaviour
 
     private IEnumerator CountdownTimer()
     {
-        int timeRemaining = Random.Range(4,11);
+        int timeRemaining = Random.Range(4, 11);
+
+        if (myTeam == "Black")
+            timeRemaining = 0;
+        
         timerTxt.gameObject.SetActive(true);
 
         // Update timer display
