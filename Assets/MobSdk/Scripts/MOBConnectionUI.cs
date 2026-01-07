@@ -182,7 +182,7 @@ public class MOBConnectionUI : MonoBehaviour
         AddDebugLog("Reconnection started...");
 
         wasReconnecting = true;
-        Screen.fullScreen = true;
+        //Screen.fullScreen = true;
         // ✨ NEW: Show reconnecting panel IMMEDIATELY
         ShowReconnectingPanel();
     }
