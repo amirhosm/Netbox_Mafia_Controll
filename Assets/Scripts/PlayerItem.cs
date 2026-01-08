@@ -63,7 +63,8 @@ public class PlayerItem : MonoBehaviour
         else if (roleAction == "Sniper") act = "به یک نفر شلیک کن";
         else if (roleAction == "Godfather") act = "یک نفر رابکش";
         else if (roleAction == "Mafia") act = "یک نفر را پیشنهاد بده";
-        else if (roleAction == "DieHard") act = "میتونی استعلام بگیری";
+        else if (roleAction == "DieHard") act = "استعلام میگیری؟";
+        else if (roleAction == "DrLecter") act = "یکی نفر را نجات بده";
         return act;
     }
 
@@ -74,7 +75,7 @@ public class PlayerItem : MonoBehaviour
             selectBtn.SetActive(false);
             GetComponent<Button>().interactable = false;
             roleTxt.text = role;
-            if ((night == 1))
+            if (night == 1)
             {
                 HighlightCard();
             }

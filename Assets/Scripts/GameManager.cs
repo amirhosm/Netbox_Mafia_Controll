@@ -43,6 +43,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] Image voteAvatar;
     [SerializeField] GameObject dayVoteBtn;
     [SerializeField] GameObject dayVotePlayerBadge;
+    [SerializeField] GameObject finalVoteAlert;
     [SerializeField] List<Transform> badgeSpawnPoints;
     [SerializeField] float badgeDisplayDuration = 3f;
     [Header("Lobby")]
@@ -400,7 +401,9 @@ public class GameManager : MonoBehaviour
         }, dayTalkPanel);
     }
 
-    public void ShowDayVote(string turnID, string turnName, string avatarID)
+
+    bool hasVotedForToday;
+    public void ShowDayVote(string turnID, string turnName, string avatarID, bool finalVote)
     {
         // Store player name for later use
         if (!playerNames.ContainsKey(turnID))
@@ -426,11 +429,15 @@ public class GameManager : MonoBehaviour
             {
                 dayVoteBtn.SetActive(true);
             }
+            if(finalVote && hasVotedForToday) dayVoteBtn.SetActive(false);
+            finalVoteAlert.SetActive(finalVote);
         }, dayVotePanel);
     }
 
     public void EndDayVoting()
     {
+        hasVotedForToday = false;
+
         TransitionToPanel(() =>
         {
             dayTalkPanel.SetActive(false);
@@ -440,6 +447,8 @@ public class GameManager : MonoBehaviour
 
     public void OnBtn_DayVote()
     {
+        hasVotedForToday = true;
+
         dayVoteBtn.SetActive(false);
         SendStringToTV("vote");
 

@@ -12,12 +12,15 @@ public class NightPanel : MonoBehaviour
     [SerializeField] RTLTextMeshPro roleTxt;
     [SerializeField] RTLTextMeshPro timerTxt;
     [SerializeField] GameObject conformBtn;
+    [SerializeField] GameObject dieHardPanel;
     string myID, myAct, myTeam;
     string selectedID;
     GameManager gameManager;
     int nightNum;
     Dictionary<string, PlayerItem> AllPlayers = new Dictionary<string, PlayerItem>();
     bool confirmed;
+    bool dieHardDecision;
+    int dieHardCount;
 
     // Timer variables
     private Coroutine timerCoroutine;
@@ -62,15 +65,6 @@ public class NightPanel : MonoBehaviour
             }
         }
 
-        if (myAct == "DieHard")
-        {
-            foreach (Transform item in listParent)
-            {
-                if (item.GetComponent<PlayerItem>().roleAction == "DieHard")
-                    item.GetComponent<PlayerItem>().ShowDieHardButton();
-            }
-        }
-
         confirmed = false;
         timerComplete = false;
 
@@ -82,7 +76,25 @@ public class NightPanel : MonoBehaviour
         {
             StopCoroutine(timerCoroutine);
         }
-        timerCoroutine = StartCoroutine(CountdownTimer());
+
+        
+        if (myAct == "DieHard")
+        {
+            dieHardPanel.SetActive(false);
+
+            if (nightNum == 1)
+            {
+                timerCoroutine = StartCoroutine(CountdownTimer());
+            }
+            else
+            {
+                dieHardPanel.SetActive(true);
+            }
+        }
+        else
+        {
+            timerCoroutine = StartCoroutine(CountdownTimer());
+        }
     }
 
     private IEnumerator CountdownTimer()
@@ -158,6 +170,27 @@ public class NightPanel : MonoBehaviour
         }
     }
 
+    public void OnBTN_DieHard(bool yes)
+    {
+        dieHardDecision = yes;
+
+        if (yes)
+        {
+            if (dieHardCount < 2)
+            {
+                dieHardCount++;
+            }
+            else
+            {
+                dieHardDecision = false;
+                gameManager.ShowMessage("فقط 2 استعلام داشتی");
+            }
+        }
+
+        dieHardPanel.SetActive(false);
+        OnBtn_Confirm();
+    }
+
     public void OnBtn_Confirm()
     {
         if (myAct == "Spy")
@@ -169,7 +202,6 @@ public class NightPanel : MonoBehaviour
                     if (nightNum > 1)
                     {
                         t.GetComponent<PlayerItem>().RevealRole((t.GetComponent<PlayerItem>().roleAction == "Godfather" || t.GetComponent<PlayerItem>().team == "White") ? "شهروند" : "مافیا");
-                        //gameManager.ShowMessage((t.GetComponent<PlayerItem>().roleAction == "Godfather" || t.GetComponent<PlayerItem>().team == "White") ? "شهروند" : "مافیا");
                     }
                 }
             }
@@ -188,18 +220,10 @@ public class NightPanel : MonoBehaviour
             }
             gameManager.SendStringToTV("NightAct:Mafia:" + selectedID);
         }
-        else if (myAct == "Lecter")
+        else if (myAct == "DrLecter")
         {
-            foreach (Transform t in listParent)
-            {
-                if (t.GetComponent<PlayerItem>().roleAction == "Mafia")
-                {
-                    Debug.Log("Send To Mafia >" + "NightLecterSave:" + selectedID);
-                    if (nightNum > 1)
-                        gameManager.SendMessageTo(t.GetComponent<PlayerItem>().id, "NightLecterSave:" + selectedID);
-                }
-            }
-            gameManager.SendStringToTV("NightAct:Mafia:" + selectedID);
+            //send to tv to save
+            gameManager.SendStringToTV("NightAct:DrLecter:" + selectedID);
         }
         else if (myAct == "Godfather")
         {
@@ -219,6 +243,10 @@ public class NightPanel : MonoBehaviour
         {
             //send to tv to kill by Sniper
             gameManager.SendStringToTV("NightAct:Sniper:" + selectedID);
+        }
+        else if (myAct == "DieHard")
+        {
+            gameManager.SendStringToTV("NightAct:DieHard:" + (dieHardDecision ? 1 : 0));
         }
 
         foreach (Transform t in listParent)

@@ -61,7 +61,11 @@ public class MOBGameSDK : MonoBehaviour
         }
         else if (message.StartsWith("DayVote"))
         {
-            gameManager.ShowDayVote(message.Split(':')[1], message.Split(':')[2], message.Split(':')[3]);
+            gameManager.ShowDayVote(message.Split(':')[1], message.Split(':')[2], message.Split(':')[3],false);
+        }
+        else if (message.StartsWith("DayVoteFinal"))
+        {
+            gameManager.ShowDayVote(message.Split(':')[1], message.Split(':')[2], message.Split(':')[3],true);
         }
         else if (message.StartsWith("EndVoting"))
         {
