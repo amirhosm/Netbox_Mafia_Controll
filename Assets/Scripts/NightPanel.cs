@@ -21,6 +21,8 @@ public class NightPanel : MonoBehaviour
     bool confirmed;
     bool dieHardDecision;
     int dieHardCount;
+    bool noGodfather, noDrLecter;
+    int mafiaCount;
 
     // Timer variables
     private Coroutine timerCoroutine;
@@ -31,14 +33,22 @@ public class NightPanel : MonoBehaviour
         gameObject.SetActive(true);
         gameManager = gm;
         myID = MyID;
+        noGodfather = true;
+        noDrLecter = true;
+        mafiaCount = 0;
         nightNum = int.Parse(datas[0].Split(':')[1]);
 
         if (listParent.childCount > 0) foreach (Transform t in listParent) Destroy(t.gameObject);
+
 
         for (int i = 1; i < datas.Length; i++)
         {
             PlayerItem playerItem = Instantiate(playerPrefab, listParent);
             playerItem.SetFromString(datas[i], this);
+
+            if (playerItem.roleAction == "Godfather") noGodfather = false;
+            if (playerItem.roleAction == "DrLecter") noDrLecter = false;
+            if (playerItem.roleAction == "Mafia") mafiaCount++;
 
             if (playerItem.id == myID)
             {
@@ -46,7 +56,8 @@ public class NightPanel : MonoBehaviour
                 actTxt.text = playerItem.GetActText();
                 myAct = playerItem.roleAction;
                 myTeam = playerItem.team;
-                if (myAct != "Dr") playerItem.gameObject.SetActive(false);
+                playerItem.gameObject.SetActive(false);
+                if (myAct == "Dr" || myAct == "DrLecter") playerItem.gameObject.SetActive(true);
             }
         }
 
@@ -57,11 +68,36 @@ public class NightPanel : MonoBehaviour
             actTxt.text = (myTeam == "Black") ? "شب معارفه: مافیا رو ببین" : "شب معارفه: مافیا رو حدس بزن";
         }
 
+        if (myAct == "Sniper" && nightNum > 1)
+        {
+            PlayerItem playerItem = Instantiate(playerPrefab, listParent);
+            playerItem.SetFromString("NO:بدون شلیک:NO:NO:NO", this);
+            playerItem.transform.SetAsFirstSibling();
+        }
+
         if (myTeam == "Black")
         {
             foreach (Transform item in listParent)
             {
                 item.GetComponent<PlayerItem>().ShowToMafiaTeam(nightNum);
+            }
+
+            if (nightNum > 1)
+            {
+                if (noGodfather)
+                {
+                    if (myAct == "DrLecter")
+                    {
+                        actTxt.text = "یک نفر رابکش";
+                    }
+                    else
+                    {
+                        if (noDrLecter && mafiaCount == 1)
+                        {
+                            actTxt.text = "یک نفر رابکش";
+                        }
+                    }
+                }
             }
         }
 
